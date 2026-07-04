@@ -1,6 +1,9 @@
 package it.bank.bankcore.payment.application.usecase;
 
 import it.bank.bankcore.account.domain.repository.AccountRepository;
+import it.bank.bankcore.ledger.application.command.RecordTransferLedgerCommand;
+import it.bank.bankcore.ledger.application.port.LedgerRecorder;
+import it.bank.bankcore.ledger.domain.enums.LedgerType;
 import it.bank.bankcore.payment.api.request.DepositRequest;
 import it.bank.bankcore.payment.api.response.DepositResponse;
 import it.bank.bankcore.payment.application.validation.DepositValidationRule;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class DepositUseCase implements UseCase<DepositRequest, DepositResponse> {
 
+    private final LedgerRecorder ledgerRecorder;
     private final DepositValidationRule depositValidationRule;
     private final AccountRepository accountRepository;
     private final PaymentRepository paymentRepository;
@@ -43,6 +47,17 @@ public class DepositUseCase implements UseCase<DepositRequest, DepositResponse> 
         targetAccount.setBalance(targetAccount.getBalance().add(input.amount()));
         accountRepository.save(targetAccount);
         paymentRepository.save(payment);
+
+        // Record the ledger entry for the deposit
+        ledgerRecorder.recordTransfer(new RecordTransferLedgerCommand(
+                targetAccount.getUuid(),
+                payment.getUuid(),
+                LedgerType.CREDIT,
+                input.amount(),
+                targetAccount.getCurrency(),
+                DEPOSIT_REASON
+        ));
+
         payment.setStatus(PaymentStatus.COMPLETED);
         paymentRepository.save(payment);
 
