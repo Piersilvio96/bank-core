@@ -1,11 +1,8 @@
 package it.bank.bankcore.shared.exception;
 
-import it.bank.bankcore.account.api.request.CreateAccountRequest;
-import it.bank.bankcore.account.api.response.CreateAccountResponse;
 import it.bank.bankcore.shared.api.ErrorResponse;
 import it.bank.bankcore.shared.api.FieldErrorResponse;
 import jakarta.validation.ConstraintViolationException;
-import jakarta.validation.ValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -19,6 +16,40 @@ import java.util.List;
 
 @RestControllerAdvice
 public class SharedExceptionHandler {
+
+
+    @ExceptionHandler(UseCaseException.class)
+    public ResponseEntity<ErrorResponse> handleException(UseCaseException exception) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(exception.getMessage());
+        errorResponse.setDetails("An error occurred while processing the request.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(InfrastructureException.class)
+    public ResponseEntity<ErrorResponse> handleException(InfrastructureException exception) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(exception.getMessage());
+        errorResponse.setDetails("An error occurred while processing the request.");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    @ExceptionHandler(BusinessRuleInputException.class)
+    public ResponseEntity<ErrorResponse> handleException(BusinessRuleInputException exception) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(exception.getMessage());
+        errorResponse.setDetails("An error occurred while processing the request.");
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @ExceptionHandler(BusinessRuleConstraintException.class)
+    public ResponseEntity<ErrorResponse> handleException(BusinessRuleConstraintException exception) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(exception.getMessage());
+        errorResponse.setDetails("An error occurred while processing the request.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(

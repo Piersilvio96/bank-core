@@ -3,7 +3,6 @@ package it.bank.bankcore.account.application.usecase;
 import it.bank.bankcore.account.api.response.GetAccountResponse;
 import it.bank.bankcore.account.domain.exception.AccountNotFoundException;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
-import it.bank.bankcore.account.domain.specification.GetAccountCriteriaSpecification;
 import it.bank.bankcore.shared.application.UseCase;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +17,9 @@ public class GetAccountUseCase implements UseCase<String, GetAccountResponse>
 
     @Override
     public GetAccountResponse execute(String uuid) {
-        // Implement the logic to retrieve account details by UUID
-        var specification = GetAccountCriteriaSpecification.createSpecification(uuid);
         // For example, you can call a repository to get the account details
-        var account = accountRepository.findOne(specification)
-                .orElseThrow(AccountNotFoundException::new);
+        var account = accountRepository.findByUuid(uuid)
+                .orElseThrow(() -> new AccountNotFoundException(uuid));
         // and return a GetAccountResponse object.
         return GetAccountResponse.builder()
                 .uuid(account.getUuid())
