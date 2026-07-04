@@ -1,19 +1,18 @@
 package it.bank.bankcore.account.application.usecase;
 
-import it.bank.bankcore.account.domain.criteria.CreateAccountCriteria;
-import it.bank.bankcore.account.domain.model.AccountEntity;
-import it.bank.bankcore.account.domain.specification.CreateAccountCriteriaSpecification;
-import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import it.bank.bankcore.account.api.request.CreateAccountRequest;
 import it.bank.bankcore.account.api.response.CreateAccountResponse;
-import it.bank.bankcore.shared.application.UseCase;
+import it.bank.bankcore.account.domain.criteria.CreateAccountCriteria;
+import it.bank.bankcore.account.domain.model.AccountEntity;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
+import it.bank.bankcore.account.domain.specification.CreateAccountCriteriaSpecification;
+import it.bank.bankcore.shared.application.UseCase;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
-@Component
-@AllArgsConstructor
+@Service
+@RequiredArgsConstructor
 @Transactional
 public class CreateAccountUseCase implements UseCase<CreateAccountRequest, CreateAccountResponse> {
 
@@ -24,7 +23,7 @@ public class CreateAccountUseCase implements UseCase<CreateAccountRequest, Creat
         // Implement the account creation logic here
         boolean exists = accountRepository.exists(
                 CreateAccountCriteriaSpecification.createSpecification(
-                        new CreateAccountCriteria(input.getFiscalCode(), input.getEmail())
+                        new CreateAccountCriteria(input.fiscalCode(), input.email())
                 )
         );
         if (exists) {
@@ -32,15 +31,15 @@ public class CreateAccountUseCase implements UseCase<CreateAccountRequest, Creat
         }
         // For example, you can create an account entity, save it to the database, and return a response
         AccountEntity account = AccountEntity.builder()
-                .firstName(input.getFirstName())
-                .lastName(input.getLastName())
-                .email(input.getEmail())
-                .fiscalCode(input.getFiscalCode())
-                .phoneNumber(input.getPhoneNumber())
-                .city(input.getCity())
-                .state(input.getState())
-                .country(input.getCountry())
-                .currency(input.getCurrency() != null ? input.getCurrency() : "EUR")
+                .firstName(input.firstName())
+                .lastName(input.lastName())
+                .email(input.email())
+                .fiscalCode(input.fiscalCode())
+                .phoneNumber(input.phoneNumber())
+                .city(input.city())
+                .state(input.state())
+                .country(input.country())
+                .currency(input.currency() != null ? input.currency() : "EUR")
                 .build();
         accountRepository.save(account);
 

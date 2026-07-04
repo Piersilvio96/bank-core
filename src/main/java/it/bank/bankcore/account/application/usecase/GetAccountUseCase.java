@@ -6,11 +6,11 @@ import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.account.domain.specification.GetAccountCriteriaSpecification;
 import it.bank.bankcore.shared.application.UseCase;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
-@Component
-@AllArgsConstructor
+@Service
+@RequiredArgsConstructor
 @Transactional
 public class GetAccountUseCase implements UseCase<String, GetAccountResponse>
 {

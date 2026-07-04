@@ -4,7 +4,6 @@ import it.bank.bankcore.account.api.request.CreateAccountRequest;
 import it.bank.bankcore.account.api.response.CreateAccountResponse;
 import it.bank.bankcore.account.api.response.GetAccountBalanceResponse;
 import it.bank.bankcore.account.api.response.GetAccountResponse;
-import it.bank.bankcore.account.domain.repository.AccountRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

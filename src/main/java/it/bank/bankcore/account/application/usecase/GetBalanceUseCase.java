@@ -1,17 +1,16 @@
 package it.bank.bankcore.account.application.usecase;
 
 import it.bank.bankcore.account.api.response.GetAccountBalanceResponse;
-import it.bank.bankcore.account.api.response.GetAccountResponse;
 import it.bank.bankcore.account.domain.exception.AccountNotFoundException;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.account.domain.specification.GetAccountCriteriaSpecification;
 import it.bank.bankcore.shared.application.UseCase;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
-@Component
-@AllArgsConstructor
+@Service
+@RequiredArgsConstructor
 @Transactional
 public class GetBalanceUseCase implements UseCase<String, GetAccountBalanceResponse>
 {
