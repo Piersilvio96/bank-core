@@ -1,11 +1,11 @@
 package it.bank.bankcore.account.domain.model;
 
+import it.bank.bankcore.account.domain.enums.AccountStatus;
 import it.bank.bankcore.shared.domain.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
+import org.springframework.util.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -28,11 +28,22 @@ public class AccountEntity extends BaseEntity {
     private String state;
     private String country;
     @Column(columnDefinition = "DECIMAL(19,2)")
-    @Builder.Default
-    private BigDecimal balance = BigDecimal.ZERO;
+    private BigDecimal balance;
     @Column(columnDefinition = "CHAR(3)")
-    @Builder.Default
-    private String currency = "EUR";
+    private String currency;
+    @Enumerated(EnumType.STRING)
+    private AccountStatus status;
+
+    @PrePersist
+    public void prePersist() {
+        if (status == null) {
+            status = AccountStatus.ACTIVE;
+        }
+        if (ObjectUtils.isEmpty(currency)) {
+            currency = "EUR";
+        }
+        balance = BigDecimal.ZERO;
+    }
 
     @Override
     public final boolean equals(Object o) {

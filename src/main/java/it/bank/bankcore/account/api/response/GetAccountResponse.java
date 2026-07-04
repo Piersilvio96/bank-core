@@ -1,5 +1,6 @@
 package it.bank.bankcore.account.api.response;
 
+import it.bank.bankcore.account.domain.enums.AccountStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,5 @@ public class GetAccountResponse {
     private String city;
     private String state;
     private String country;
-    private BigDecimal balance;
-    private String currency;
+    private AccountStatus status;
 }

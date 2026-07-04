@@ -2,7 +2,9 @@ package it.bank.bankcore.account.api.controller;
 
 import it.bank.bankcore.account.api.request.CreateAccountRequest;
 import it.bank.bankcore.account.api.response.CreateAccountResponse;
+import it.bank.bankcore.account.api.response.GetAccountBalanceResponse;
 import it.bank.bankcore.account.api.response.GetAccountResponse;
+import it.bank.bankcore.account.domain.repository.AccountRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +18,7 @@ public class AccountController {
 
     private final CreateAccountUseCase createAccountUseCase;
     private final GetAccountUseCase getAccountUseCase;
+    private final GetBalanceUseCase getBalanceUseCase;
 
     @PostMapping
     public CreateAccountResponse createAccount(
@@ -31,5 +34,11 @@ public class AccountController {
         return getAccountUseCase.execute(uuid);
     }
 
+    @GetMapping("/{uuid}/balance")
+    public GetAccountBalanceResponse getAccountBalance(
+            @PathVariable String uuid
+    ) {
+        return getBalanceUseCase.execute(uuid);
+    }
 
 }
