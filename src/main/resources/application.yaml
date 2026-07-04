@@ -1,7 +1,6 @@
 server:
   port: 8080
 
-
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/bankcore
@@ -12,3 +11,8 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    open-in-view: false
+
+springdoc:
+  api-docs:
+    version: openapi_3_0

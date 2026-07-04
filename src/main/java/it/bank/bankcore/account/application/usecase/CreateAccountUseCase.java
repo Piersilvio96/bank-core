@@ -40,7 +40,7 @@ public class CreateAccountUseCase implements UseCase<CreateAccountRequest, Creat
                 .city(input.getCity())
                 .state(input.getState())
                 .country(input.getCountry())
-                .currency(input.getCurrency())
+                .currency(input.getCurrency() != null ? input.getCurrency() : "EUR")
                 .build();
         accountRepository.save(account);
 

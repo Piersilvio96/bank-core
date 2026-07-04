@@ -17,7 +17,6 @@ import java.util.Objects;
 @ToString
 @RequiredArgsConstructor
 @AllArgsConstructor
-@NoArgsConstructor
 @Builder
 public class AccountEntity extends BaseEntity {
     private String firstName;
@@ -29,8 +28,10 @@ public class AccountEntity extends BaseEntity {
     private String state;
     private String country;
     @Column(columnDefinition = "DECIMAL(19,2)")
+    @Builder.Default
     private BigDecimal balance = BigDecimal.ZERO;
     @Column(columnDefinition = "CHAR(3)")
+    @Builder.Default
     private String currency = "EUR";
 
     @Override
