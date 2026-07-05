@@ -1,5 +1,7 @@
 # BankCore
 
+[![Test on main](https://github.com/Piersilvio96/bank-core/actions/workflows/test-on-main.yml/badge.svg)](https://github.com/Piersilvio96/bank-core/actions/workflows/test-on-main.yml)
+
 BankCore is the application core of a banking platform in progress. The project currently exposes the first account-related flow, while the structure is intended to grow into a broader banking backend covering customers, accounts, ledger entries, payments, cards, security, audit, and external integrations.
 
 ## Project Goal
