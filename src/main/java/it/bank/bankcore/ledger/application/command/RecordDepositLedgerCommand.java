@@ -5,11 +5,11 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 
-public record RecordTransferLedgerCommand (
-        @NotEmpty String sourceAccountId,
-        @NotEmpty String targetAccountId,
+public record RecordDepositLedgerCommand(
+        @NotEmpty String accountId,
         @NotEmpty String paymentId,
         @NotEmpty @Positive BigDecimal amount,
         @NotEmpty String currency,
         @NotEmpty String reason
-){}
+) {
+}
