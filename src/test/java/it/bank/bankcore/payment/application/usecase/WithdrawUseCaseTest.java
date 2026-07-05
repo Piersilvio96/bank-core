@@ -4,12 +4,12 @@ import it.bank.bankcore.account.domain.enums.AccountStatus;
 import it.bank.bankcore.account.domain.exception.AccountNotFoundException;
 import it.bank.bankcore.account.domain.model.Account;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
-import it.bank.bankcore.ledger.application.command.RecordDepositLedgerCommand;
+import it.bank.bankcore.ledger.application.command.RecordWithdrawLedgerCommand;
 import it.bank.bankcore.ledger.application.port.LedgerRecorder;
-import it.bank.bankcore.payment.application.command.DepositCommand;
+import it.bank.bankcore.payment.application.command.WithdrawCommand;
 import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
-import it.bank.bankcore.payment.application.result.DepositResult;
-import it.bank.bankcore.payment.application.validation.DepositValidationRule;
+import it.bank.bankcore.payment.application.result.WithdrawResult;
+import it.bank.bankcore.payment.application.validation.WithdrawValidationRule;
 import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
 import it.bank.bankcore.payment.domain.model.Payment;
@@ -32,13 +32,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class DepositUseCaseTest {
+class WithdrawUseCaseTest {
 
     @Mock
     private LedgerRecorder ledgerRecorder;
 
     @Mock
-    private DepositValidationRule depositValidationRule;
+    private WithdrawValidationRule withdrawValidationRule;
 
     @Mock
     private AccountRepository accountRepository;
@@ -53,45 +53,44 @@ class DepositUseCaseTest {
     private PaymentApplicationMapper paymentApplicationMapper;
 
     @InjectMocks
-    private DepositUseCase useCase;
+    private WithdrawUseCase useCase;
 
     @Test
-    void execute_shouldDepositAndRecordLedgerEntry() {
-        var command = new DepositCommand("acc-uuid", new BigDecimal("25.00"), "EUR");
+    void execute_shouldWithdrawAndRecordLedgerEntry() {
+        var command = new WithdrawCommand("acc-uuid", new BigDecimal("25.00"), "EUR");
         var targetAccount = sampleAccount();
-        var pendingPayment = samplePayment("payment-1", PaymentStatus.PENDING);
-        var savedPayment = samplePayment("payment-1", PaymentStatus.COMPLETED);
-        var expected = new DepositResult("payment-1", new BigDecimal("25.00"), "EUR");
+        var pendingPayment = samplePayment("payment-1", PaymentStatus.PENDING, "Withdraw");
+        var savedPayment = samplePayment("payment-1", PaymentStatus.COMPLETED, "Withdraw");
+        var expected = new WithdrawResult("payment-1", new BigDecimal("25.00"), "EUR");
 
         when(accountRepository.findByUuid("acc-uuid")).thenReturn(Optional.of(targetAccount));
         when(paymentDomainMapper.toDomain(command, "EUR")).thenReturn(pendingPayment);
         when(paymentRepository.save(pendingPayment)).thenReturn(savedPayment);
-        when(paymentApplicationMapper.toDepositResult(savedPayment)).thenReturn(expected);
+        when(paymentApplicationMapper.toWithdrawResult(savedPayment)).thenReturn(expected);
 
         var result = useCase.execute(command);
 
         assertEquals(expected, result);
-        assertEquals(0, targetAccount.getBalance().compareTo(new BigDecimal("125.00")));
+        assertEquals(0, targetAccount.getBalance().compareTo(new BigDecimal("75.00")));
 
-        var ledgerCaptor = ArgumentCaptor.forClass(RecordDepositLedgerCommand.class);
-        verify(ledgerRecorder).recordDeposit(ledgerCaptor.capture());
+        var ledgerCaptor = ArgumentCaptor.forClass(RecordWithdrawLedgerCommand.class);
+        verify(ledgerRecorder).recordWithdraw(ledgerCaptor.capture());
         assertEquals("acc-uuid", ledgerCaptor.getValue().accountId());
         assertEquals("payment-1", ledgerCaptor.getValue().paymentId());
         assertEquals(0, ledgerCaptor.getValue().amount().compareTo(new BigDecimal("25.00")));
-        assertEquals("EUR", ledgerCaptor.getValue().currency());
 
         verify(accountRepository).save(targetAccount);
     }
 
     @Test
     void execute_shouldThrowWhenAccountNotFound() {
-        var command = new DepositCommand("missing-uuid", new BigDecimal("10.00"), "EUR");
+        var command = new WithdrawCommand("missing-uuid", new BigDecimal("10.00"), "EUR");
         when(accountRepository.findByUuid("missing-uuid")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
 
         verify(paymentRepository, never()).save(any());
-        verify(ledgerRecorder, never()).recordDeposit(any());
+        verify(ledgerRecorder, never()).recordWithdraw(any());
     }
 
     private Account sampleAccount() {
@@ -111,14 +110,15 @@ class DepositUseCaseTest {
                 .build();
     }
 
-    private Payment samplePayment(String uuid, PaymentStatus status) {
+    private Payment samplePayment(String uuid, PaymentStatus status, String reason) {
         return Payment.builder()
                 .uuid(uuid)
                 .targetAccountUuid("acc-uuid")
                 .amount(new BigDecimal("25.00"))
                 .currency("EUR")
-                .reason("Deposit")
+                .reason(reason)
                 .status(status)
                 .build();
     }
 }
+
