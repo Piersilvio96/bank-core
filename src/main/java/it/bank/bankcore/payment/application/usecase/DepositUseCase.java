@@ -36,7 +36,7 @@ public class DepositUseCase implements UseCase<DepositCommand, DepositResult> {
         var targetAccount = accountRepository.findByUuid(command.accountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(command.accountUuid()));
 
-        var payment = paymentDomainMapper.toDomain(command, targetAccount.getCurrency());
+        var payment = paymentDomainMapper.toDomain(command);
         payment.complete();
         var savedPayment = paymentRepository.save(payment);
 

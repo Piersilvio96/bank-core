@@ -36,7 +36,7 @@ public class TransferUseCase implements UseCase<TransferCommand, TransferResult>
         var targetAccount = accountRepository.findByUuid(command.targetAccountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(command.targetAccountUuid()));
 
-        var payment = paymentDomainMapper.toDomain(command, targetAccount.getCurrency());
+        var payment = paymentDomainMapper.toDomain(command);
         payment.complete();
         var savedPayment = paymentRepository.save(payment);
 

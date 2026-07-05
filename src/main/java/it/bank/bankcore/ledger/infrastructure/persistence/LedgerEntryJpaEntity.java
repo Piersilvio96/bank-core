@@ -19,7 +19,7 @@ public class LedgerEntryJpaEntity extends BaseEntity {
     private String accountId;
     private String paymentId;
     @Enumerated(EnumType.STRING)
-    private LedgerType type; // "DEBIT" or "CREDIT"
+    private LedgerType type;
     private String currency;
     @Column(columnDefinition = "DECIMAL(19,2)")
     private BigDecimal amount;

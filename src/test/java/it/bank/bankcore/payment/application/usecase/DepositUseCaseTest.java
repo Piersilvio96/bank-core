@@ -64,7 +64,7 @@ class DepositUseCaseTest {
         var expected = new DepositResult("payment-1", new BigDecimal("25.00"), "EUR");
 
         when(accountRepository.findByUuid("acc-uuid")).thenReturn(Optional.of(targetAccount));
-        when(paymentDomainMapper.toDomain(command, "EUR")).thenReturn(pendingPayment);
+        when(paymentDomainMapper.toDomain(command)).thenReturn(pendingPayment);
         when(paymentRepository.save(pendingPayment)).thenReturn(savedPayment);
         when(paymentApplicationMapper.toDepositResult(savedPayment)).thenReturn(expected);
 

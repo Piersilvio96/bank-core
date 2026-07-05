@@ -66,7 +66,7 @@ class TransferUseCaseTest {
 
         when(accountRepository.findByUuid("source-uuid")).thenReturn(Optional.of(sourceAccount));
         when(accountRepository.findByUuid("target-uuid")).thenReturn(Optional.of(targetAccount));
-        when(paymentDomainMapper.toDomain(command, "EUR")).thenReturn(pendingPayment);
+        when(paymentDomainMapper.toDomain(command)).thenReturn(pendingPayment);
         when(paymentRepository.save(pendingPayment)).thenReturn(savedPayment);
         when(paymentApplicationMapper.toTransferResult(savedPayment)).thenReturn(expected);
 

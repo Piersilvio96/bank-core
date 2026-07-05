@@ -3,49 +3,32 @@ package it.bank.bankcore.payment.domain.mapper;
 import it.bank.bankcore.payment.application.command.DepositCommand;
 import it.bank.bankcore.payment.application.command.TransferCommand;
 import it.bank.bankcore.payment.application.command.WithdrawCommand;
-import it.bank.bankcore.payment.domain.enums.PaymentStatus;
+import it.bank.bankcore.payment.domain.mapper.cases.DepositDomainMapper;
+import it.bank.bankcore.payment.domain.mapper.cases.TransferDomainMapper;
+import it.bank.bankcore.payment.domain.mapper.cases.WithdrawDomainMapper;
 import it.bank.bankcore.payment.domain.model.Payment;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ObjectUtils;
 
 @Component
+@RequiredArgsConstructor
 public class PaymentDomainMapper {
 
-    private static final String DEPOSIT_REASON = "Deposit";
-    private static final String WITHDRAW_REASON = "Withdraw";
-    private static final String TRANSFER_REASON = "Transfer";
+    private final DepositDomainMapper depositDomainMapper;
+    private final TransferDomainMapper transferDomainMapper;
+    private final WithdrawDomainMapper withdrawDomainMapper;
 
-    public Payment toDomain(DepositCommand command, String targetCurrency) {
-        return Payment.builder()
-                .sourceAccountUuid(null)
-                .targetAccountUuid(command.accountUuid())
-                .amount(command.amount())
-                .currency(targetCurrency)
-                .reason(DEPOSIT_REASON)
-                .status(PaymentStatus.PENDING)
-                .build();
+    public Payment toDomain(DepositCommand command) {
+        return depositDomainMapper.toDomain(command);
     }
 
-    public Payment toDomain(WithdrawCommand command, String targetCurrency) {
-        return Payment.builder()
-                .sourceAccountUuid(null)
-                .targetAccountUuid(command.accountUuid())
-                .amount(command.amount())
-                .currency(targetCurrency)
-                .reason(WITHDRAW_REASON)
-                .status(PaymentStatus.PENDING)
-                .build();
+    public Payment toDomain(TransferCommand command) {
+        return transferDomainMapper.toDomain(command);
     }
 
-    public Payment toDomain(TransferCommand command, String targetCurrency) {
-        return Payment.builder()
-                .sourceAccountUuid(command.sourceAccountUuid())
-                .targetAccountUuid(command.targetAccountUuid())
-                .amount(command.amount())
-                .currency(targetCurrency)
-                .reason(ObjectUtils.isEmpty(command.reason()) ? TRANSFER_REASON : command.reason())
-                .status(PaymentStatus.PENDING)
-                .build();
+    public Payment toDomain(WithdrawCommand command) {
+        return withdrawDomainMapper.toDomain(command);
     }
+
 }
 

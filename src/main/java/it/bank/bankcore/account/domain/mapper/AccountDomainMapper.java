@@ -12,21 +12,6 @@ import java.math.BigDecimal;
 public class AccountDomainMapper implements DomainMapper<CreateAccountCommand, Account> {
 
 	@Override
-	public CreateAccountCommand toCommand(Account domain) {
-		return new CreateAccountCommand(
-				domain.getFirstName(),
-				domain.getLastName(),
-				domain.getEmail(),
-				domain.getPhoneNumber(),
-				domain.getFiscalCode(),
-				domain.getCity(),
-				domain.getState(),
-				domain.getCountry(),
-				domain.getCurrency()
-		);
-	}
-
-	@Override
 	public Account toDomain(CreateAccountCommand command) {
 		var currency = (command.currency() == null || command.currency().isBlank()) ? "EUR" : command.currency().toUpperCase();
 
