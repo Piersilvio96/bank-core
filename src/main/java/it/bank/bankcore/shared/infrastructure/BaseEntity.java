@@ -22,6 +22,7 @@ public class BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(unique = true)
+    @Builder.Default
     private String uuid = UUID.randomUUID().toString();
     @CreationTimestamp
     private Long createdAt;

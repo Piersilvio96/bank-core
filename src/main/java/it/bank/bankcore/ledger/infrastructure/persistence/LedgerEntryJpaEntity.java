@@ -4,6 +4,7 @@ import it.bank.bankcore.ledger.domain.enums.LedgerType;
 import it.bank.bankcore.shared.infrastructure.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 
@@ -13,7 +14,7 @@ import java.math.BigDecimal;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@SuperBuilder
 public class LedgerEntryJpaEntity extends BaseEntity {
     private String accountId;
     private String paymentId;
