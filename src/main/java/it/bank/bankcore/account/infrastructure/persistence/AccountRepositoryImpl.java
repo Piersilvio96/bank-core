@@ -31,6 +31,11 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
+    public Boolean existsByFiscalCodeOrEmail(String fiscalCode, String email) {
+        return accountJpaRepository.existsByFiscalCodeOrEmail(fiscalCode, email);
+    }
+
+    @Override
     public Boolean exists(CreateAccountCriteria criteria) {
         var createAccountSpecification = CreateAccountCriteriaSpecification.createSpecification(criteria);
         return accountJpaRepository.exists(createAccountSpecification);

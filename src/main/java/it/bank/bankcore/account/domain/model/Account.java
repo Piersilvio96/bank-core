@@ -7,15 +7,15 @@ import it.bank.bankcore.account.domain.exception.InsufficientFundsException;
 import it.bank.bankcore.account.domain.exception.InvalidAmountException;
 import it.bank.bankcore.shared.domain.Base;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 
 
 @EqualsAndHashCode(callSuper = true)
-@Data
+@Getter
 @AllArgsConstructor
 @SuperBuilder
 public class Account extends Base {

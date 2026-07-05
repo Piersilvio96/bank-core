@@ -1,13 +1,13 @@
 package it.bank.bankcore.payment.application.usecase;
 
+import it.bank.bankcore.account.domain.exception.AccountNotFoundException;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.ledger.application.command.RecordTransferLedgerCommand;
 import it.bank.bankcore.ledger.application.port.LedgerRecorder;
 import it.bank.bankcore.ledger.domain.enums.LedgerType;
-import it.bank.bankcore.payment.api.mapper.DepositMapper;
-import it.bank.bankcore.payment.api.response.DepositResponse;
 import it.bank.bankcore.payment.application.command.DepositCommand;
 import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
+import it.bank.bankcore.payment.application.result.DepositResult;
 import it.bank.bankcore.payment.application.validation.DepositValidationRule;
 import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class DepositUseCase implements UseCase<DepositCommand, DepositResponse> {
+public class DepositUseCase implements UseCase<DepositCommand, DepositResult> {
 
     private static final String DEPOSIT_REASON = "Deposit";
 
@@ -30,14 +30,13 @@ public class DepositUseCase implements UseCase<DepositCommand, DepositResponse> 
     private final PaymentRepository paymentRepository;
     private final PaymentDomainMapper paymentDomainMapper;
     private final PaymentApplicationMapper paymentApplicationMapper;
-    private final DepositMapper depositMapper;
 
     @Override
-    public DepositResponse execute(DepositCommand command) {
+    public DepositResult execute(DepositCommand command) {
         depositValidationRule.validate(command);
 
         var targetAccount = accountRepository.findByUuid(command.accountUuid())
-                .orElseThrow(() -> new IllegalArgumentException("Target account not found."));
+                .orElseThrow(() -> new AccountNotFoundException(command.accountUuid()));
 
         var payment = paymentDomainMapper.toDomain(command, targetAccount.getCurrency());
         payment.setStatus(PaymentStatus.COMPLETED);
@@ -55,8 +54,6 @@ public class DepositUseCase implements UseCase<DepositCommand, DepositResponse> 
                 DEPOSIT_REASON
         ));
 
-        var result = paymentApplicationMapper.toDepositResult(savedPayment);
-
-        return depositMapper.toResponse(result);
+        return paymentApplicationMapper.toDepositResult(savedPayment);
     }
 }

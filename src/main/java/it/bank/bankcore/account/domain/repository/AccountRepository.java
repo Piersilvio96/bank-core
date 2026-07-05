@@ -11,5 +11,7 @@ public interface AccountRepository {
 
     Optional<Account> findByUuid(String uuid);
 
+    Boolean existsByFiscalCodeOrEmail(String fiscalCode, String email);
+
     Boolean exists(CreateAccountCriteria criteria);
 }

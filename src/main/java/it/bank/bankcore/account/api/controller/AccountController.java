@@ -1,10 +1,14 @@
 package it.bank.bankcore.account.api.controller;
 
 import it.bank.bankcore.account.api.mapper.CreateAccountMapper;
+import it.bank.bankcore.account.api.mapper.GetAccountMapper;
+import it.bank.bankcore.account.api.mapper.GetBalanceMapper;
 import it.bank.bankcore.account.api.request.CreateAccountRequest;
 import it.bank.bankcore.account.api.response.CreateAccountResponse;
 import it.bank.bankcore.account.api.response.GetAccountBalanceResponse;
 import it.bank.bankcore.account.api.response.GetAccountResponse;
+import it.bank.bankcore.account.application.query.GetAccountQuery;
+import it.bank.bankcore.account.application.query.GetBalanceQuery;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +21,8 @@ import jakarta.validation.Valid;
 public class AccountController {
 
     private final CreateAccountMapper createAccountMapper;
+    private final GetAccountMapper getAccountMapper;
+    private final GetBalanceMapper getBalanceMapper;
     private final CreateAccountUseCase createAccountUseCase;
     private final GetAccountUseCase getAccountUseCase;
     private final GetBalanceUseCase getBalanceUseCase;
@@ -25,21 +31,24 @@ public class AccountController {
     public CreateAccountResponse createAccount(
             @Valid @RequestBody CreateAccountRequest request
     ) {
-        return createAccountUseCase.execute(createAccountMapper.toCommand(request));
+        var result = createAccountUseCase.execute(createAccountMapper.toCommand(request));
+        return createAccountMapper.toResponse(result);
     }
 
     @GetMapping("/{uuid}")
     public GetAccountResponse getAccount(
             @PathVariable String uuid
     ) {
-        return getAccountUseCase.execute(uuid);
+        var result = getAccountUseCase.execute(new GetAccountQuery(uuid));
+        return getAccountMapper.toResponse(result);
     }
 
     @GetMapping("/{uuid}/balance")
     public GetAccountBalanceResponse getAccountBalance(
             @PathVariable String uuid
     ) {
-        return getBalanceUseCase.execute(uuid);
+        var result = getBalanceUseCase.execute(new GetBalanceQuery(uuid));
+        return getBalanceMapper.toResponse(result);
     }
 
 }

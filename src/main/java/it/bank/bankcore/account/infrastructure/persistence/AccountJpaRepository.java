@@ -11,4 +11,6 @@ public interface AccountJpaRepository extends JpaRepository<AccountJpaEntity, Lo
 
     Optional<AccountJpaEntity> findByUuid(String uuid);
 
+    Boolean existsByFiscalCodeOrEmail(String fiscalCode, String email);
+
 }

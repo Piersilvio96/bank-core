@@ -26,23 +26,30 @@ The current implementation starts from the `account` domain. It supports creatin
 ```text
 src/main/java/it/bank/bankcore
 |-- BankCoreApplication.java
-|-- account
+|-- account|payment|ledger
 |   |-- api
 |   |   |-- controller
 |   |   |-- request
-|   |   `-- response
+|   |   |-- response
+|   |   `-- mapper
 |   |-- application
-|   |   `-- usecase
-|   `-- domain
-|       |-- criteria
-|       |-- model
-|       |-- repository
-|       `-- specification
+|   |   |-- usecase
+|   |   |-- command
+|   |   |-- query
+|   |   `-- result
+|   |-- domain
+|   |   |-- model
+|   |   |-- repository
+|   |   |-- exception
+|   |   `-- mapper
+|   `-- infrastructure
+|       `-- persistence
 `-- shared
     |-- api
     |-- application
     |-- domain
-    `-- exception
+|-- exception
+`-- infrastructure
 ```
 
 ## Main Modules
@@ -237,10 +244,18 @@ BankCore can evolve into a banking platform made of independent but consistent d
 
 The project follows a lightweight clean architecture style:
 
-- `api`: REST controllers, request objects, and response objects.
-- `application`: use cases and application orchestration.
-- `domain`: entities, repositories, criteria, and domain rules.
-- `shared`: common contracts and reusable infrastructure.
+- `api`: controllers, request/response DTO, API mappers (`Request -> Command`, `Result -> Response`).
+- `application`: use cases, commands/queries/results, application ports.
+- `domain`: business models, business rules, domain exceptions, repository abstractions.
+- `infrastructure`: JPA entities/repositories/specifications, persistence mappers, DB-specific adapters.
+- `shared`: cross-cutting contracts and exception handling.
+
+Boundary rules enforced by convention:
+
+- Use cases do not depend on `api` classes.
+- Use cases do not depend on `infrastructure` classes.
+- Controllers do not depend on JPA entities/repositories.
+- Validation annotations stay on API request DTO.
 
 This structure keeps the domain readable and gives the codebase room to grow as more banking capabilities are added.
 

@@ -22,7 +22,8 @@ public class PaymentController {
     @PostMapping("/deposit")
     public DepositResponse deposit(@Valid @RequestBody DepositRequest input)
     {
-        return depositUseCase.execute(depositMapper.toCommand(input));
+        var result = depositUseCase.execute(depositMapper.toCommand(input));
+        return depositMapper.toResponse(result);
     }
 
 
