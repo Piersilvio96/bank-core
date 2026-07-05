@@ -8,7 +8,6 @@ import it.bank.bankcore.payment.application.command.WithdrawCommand;
 import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
 import it.bank.bankcore.payment.application.result.WithdrawResult;
 import it.bank.bankcore.payment.application.validation.WithdrawValidationRule;
-import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
 import it.bank.bankcore.shared.application.UseCase;
@@ -38,7 +37,7 @@ public class WithdrawUseCase implements UseCase<WithdrawCommand, WithdrawResult>
                 .orElseThrow(() -> new AccountNotFoundException(command.accountUuid()));
 
         var payment = paymentDomainMapper.toDomain(command, targetAccount.getCurrency());
-        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.complete();
         var savedPayment = paymentRepository.save(payment);
 
         targetAccount.withdraw(command.amount());

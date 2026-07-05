@@ -8,7 +8,6 @@ import it.bank.bankcore.payment.application.command.TransferCommand;
 import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
 import it.bank.bankcore.payment.application.result.TransferResult;
 import it.bank.bankcore.payment.application.validation.TransferValidationRule;
-import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
 import it.bank.bankcore.shared.application.UseCase;
@@ -38,7 +37,7 @@ public class TransferUseCase implements UseCase<TransferCommand, TransferResult>
                 .orElseThrow(() -> new AccountNotFoundException(command.targetAccountUuid()));
 
         var payment = paymentDomainMapper.toDomain(command, targetAccount.getCurrency());
-        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.complete();
         var savedPayment = paymentRepository.save(payment);
 
         sourceAccount.withdraw(command.amount());

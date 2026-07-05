@@ -6,6 +6,7 @@ import it.bank.bankcore.account.domain.exception.AccountStatusException;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.payment.application.command.TransferCommand;
 import it.bank.bankcore.payment.domain.exception.CurrencyAccountException;
+import it.bank.bankcore.payment.domain.exception.SameAccountTransferException;
 import it.bank.bankcore.shared.application.ValidationRule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,10 @@ public class TransferValidationRule implements ValidationRule<TransferCommand> {
 
         if (!ObjectUtils.nullSafeEquals(sourceAccount.getCurrency(), input.currency())) {
             throw new CurrencyAccountException(sourceAccount.getCurrency(), input.currency());
+        }
+
+        if (ObjectUtils.nullSafeEquals(sourceAccount.getUuid(), targetAccount.getUuid())) {
+            throw new SameAccountTransferException(sourceAccount.getUuid());
         }
 
     }
