@@ -1,9 +1,10 @@
-package it.bank.bankcore.account.domain.model;
+package it.bank.bankcore.account.infrastructure.persistence;
 
 import it.bank.bankcore.account.domain.enums.AccountStatus;
-import it.bank.bankcore.shared.domain.BaseEntity;
+import it.bank.bankcore.shared.infrastructure.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.proxy.HibernateProxy;
 import org.springframework.util.ObjectUtils;
 
@@ -17,8 +18,8 @@ import java.util.Objects;
 @ToString
 @RequiredArgsConstructor
 @AllArgsConstructor
-@Builder
-public class AccountEntity extends BaseEntity {
+@SuperBuilder
+public class AccountJpaEntity extends BaseEntity {
     private String firstName;
     private String lastName;
     private String email;
@@ -52,7 +53,7 @@ public class AccountEntity extends BaseEntity {
         Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
         if (thisEffectiveClass != oEffectiveClass) return false;
-        AccountEntity that = (AccountEntity) o;
+        AccountJpaEntity that = (AccountJpaEntity) o;
         return getId() != null && Objects.equals(getId(), that.getId());
     }
 

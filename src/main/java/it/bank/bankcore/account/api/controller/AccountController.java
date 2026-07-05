@@ -1,5 +1,6 @@
 package it.bank.bankcore.account.api.controller;
 
+import it.bank.bankcore.account.api.mapper.CreateAccountMapper;
 import it.bank.bankcore.account.api.request.CreateAccountRequest;
 import it.bank.bankcore.account.api.response.CreateAccountResponse;
 import it.bank.bankcore.account.api.response.GetAccountBalanceResponse;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/v1/accounts")
 public class AccountController {
 
+    private final CreateAccountMapper createAccountMapper;
     private final CreateAccountUseCase createAccountUseCase;
     private final GetAccountUseCase getAccountUseCase;
     private final GetBalanceUseCase getBalanceUseCase;
@@ -23,7 +25,7 @@ public class AccountController {
     public CreateAccountResponse createAccount(
             @Valid @RequestBody CreateAccountRequest request
     ) {
-        return createAccountUseCase.execute(request);
+        return createAccountUseCase.execute(createAccountMapper.toCommand(request));
     }
 
     @GetMapping("/{uuid}")

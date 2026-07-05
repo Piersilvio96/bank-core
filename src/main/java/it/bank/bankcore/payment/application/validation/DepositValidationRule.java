@@ -4,7 +4,7 @@ import it.bank.bankcore.account.domain.enums.AccountStatus;
 import it.bank.bankcore.account.domain.exception.AccountNotFoundException;
 import it.bank.bankcore.account.domain.exception.AccountStatusException;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
-import it.bank.bankcore.payment.api.request.DepositRequest;
+import it.bank.bankcore.payment.application.command.DepositCommand;
 import it.bank.bankcore.payment.domain.exception.CurrencyAccountException;
 import it.bank.bankcore.shared.application.ValidationRule;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +13,12 @@ import org.springframework.util.ObjectUtils;
 
 @Service
 @RequiredArgsConstructor
-public class DepositValidationRule implements ValidationRule<DepositRequest> {
+public class DepositValidationRule implements ValidationRule<DepositCommand> {
 
     private final AccountRepository accountRepository;
 
     @Override
-    public void validate(DepositRequest input) {
+    public void validate(DepositCommand input) {
         var targetAccount = accountRepository.findByUuid(input.accountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(input.accountUuid()));
 

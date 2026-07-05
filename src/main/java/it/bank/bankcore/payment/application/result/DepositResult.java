@@ -1,10 +1,11 @@
-package it.bank.bankcore.payment.api.response;
+package it.bank.bankcore.payment.application.result;
 
 import java.math.BigDecimal;
 
-public record DepositResponse(
+public record DepositResult(
         String paymentId,
         BigDecimal amount,
         String currency
 ) {
 }
+

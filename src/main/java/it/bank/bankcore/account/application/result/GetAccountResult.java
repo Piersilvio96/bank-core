@@ -1,8 +1,9 @@
-package it.bank.bankcore.account.api.response;
+package it.bank.bankcore.account.application.result;
 
-import java.math.BigDecimal;
+import it.bank.bankcore.account.domain.enums.AccountStatus;
 
-public record CreateAccountResponse(
+
+public record GetAccountResult (
     String uuid,
     String firstName,
     String lastName,
@@ -12,6 +13,5 @@ public record CreateAccountResponse(
     String city,
     String state,
     String country,
-    BigDecimal balance,
-    String currency
-){}
+    AccountStatus status
+) {}

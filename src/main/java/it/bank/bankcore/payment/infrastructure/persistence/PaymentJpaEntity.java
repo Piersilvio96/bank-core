@@ -1,10 +1,11 @@
-package it.bank.bankcore.payment.domain.model;
+package it.bank.bankcore.payment.infrastructure.persistence;
 
-import it.bank.bankcore.account.domain.model.AccountEntity;
+import it.bank.bankcore.account.infrastructure.persistence.AccountJpaEntity;
 import it.bank.bankcore.payment.domain.enums.PaymentStatus;
-import it.bank.bankcore.shared.domain.BaseEntity;
+import it.bank.bankcore.shared.infrastructure.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 
@@ -14,12 +15,12 @@ import java.math.BigDecimal;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class PaymentEntity extends BaseEntity {
+@SuperBuilder
+public class PaymentJpaEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
-    private AccountEntity sourceAccount;
+    private AccountJpaEntity sourceAccount;
     @ManyToOne(fetch = FetchType.LAZY)
-    private AccountEntity targetAccount;
+    private AccountJpaEntity targetAccount;
     @Column(columnDefinition = "DECIMAL(19,2)")
     private BigDecimal amount;
     @Column(columnDefinition = "TEXT")

@@ -1,7 +1,7 @@
-package it.bank.bankcore.ledger.domain.model;
+package it.bank.bankcore.ledger.infrastructure.persistence;
 
 import it.bank.bankcore.ledger.domain.enums.LedgerType;
-import it.bank.bankcore.shared.domain.BaseEntity;
+import it.bank.bankcore.shared.infrastructure.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class LedgerEntryEntity extends BaseEntity {
+public class LedgerEntryJpaEntity extends BaseEntity {
     private String accountId;
     private String paymentId;
     @Enumerated(EnumType.STRING)

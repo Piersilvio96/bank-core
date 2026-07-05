@@ -1,8 +1,9 @@
-package it.bank.bankcore.account.api.response;
+package it.bank.bankcore.account.application.result;
 
 import java.math.BigDecimal;
 
-public record CreateAccountResponse(
+
+public record CreateAccountResult(
     String uuid,
     String firstName,
     String lastName,
@@ -14,4 +15,4 @@ public record CreateAccountResponse(
     String country,
     BigDecimal balance,
     String currency
-){}
+) {}

@@ -4,11 +4,13 @@ import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.ledger.application.command.RecordTransferLedgerCommand;
 import it.bank.bankcore.ledger.application.port.LedgerRecorder;
 import it.bank.bankcore.ledger.domain.enums.LedgerType;
-import it.bank.bankcore.payment.api.request.DepositRequest;
+import it.bank.bankcore.payment.api.mapper.DepositMapper;
 import it.bank.bankcore.payment.api.response.DepositResponse;
+import it.bank.bankcore.payment.application.command.DepositCommand;
+import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
 import it.bank.bankcore.payment.application.validation.DepositValidationRule;
 import it.bank.bankcore.payment.domain.enums.PaymentStatus;
-import it.bank.bankcore.payment.domain.model.PaymentEntity;
+import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
 import it.bank.bankcore.shared.application.UseCase;
 import jakarta.transaction.Transactional;
@@ -18,54 +20,43 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class DepositUseCase implements UseCase<DepositRequest, DepositResponse> {
+public class DepositUseCase implements UseCase<DepositCommand, DepositResponse> {
+
+    private static final String DEPOSIT_REASON = "Deposit";
 
     private final LedgerRecorder ledgerRecorder;
     private final DepositValidationRule depositValidationRule;
     private final AccountRepository accountRepository;
     private final PaymentRepository paymentRepository;
-    private final String DEPOSIT_REASON = "Deposit";
+    private final PaymentDomainMapper paymentDomainMapper;
+    private final PaymentApplicationMapper paymentApplicationMapper;
+    private final DepositMapper depositMapper;
 
     @Override
-    public DepositResponse execute(DepositRequest input) {
-        // Implement the logic to perform a deposit operation
-        depositValidationRule.validate(input);
-        // For example, you can call a repository to update the account balance
-        var targetAccount = accountRepository.findByUuid(input.accountUuid())
+    public DepositResponse execute(DepositCommand command) {
+        depositValidationRule.validate(command);
+
+        var targetAccount = accountRepository.findByUuid(command.accountUuid())
                 .orElseThrow(() -> new IllegalArgumentException("Target account not found."));
 
-        var payment = PaymentEntity.builder()
-                .sourceAccount(null)
-                .targetAccount(targetAccount)
-                .amount(input.amount())
-                .currency(targetAccount.getCurrency())
-                .reason(DEPOSIT_REASON)
-                .status(PaymentStatus.PENDING)
-                .build();
+        var payment = paymentDomainMapper.toDomain(command, targetAccount.getCurrency());
+        payment.setStatus(PaymentStatus.COMPLETED);
+        var savedPayment = paymentRepository.save(payment);
 
-        // Update the account balance
-        targetAccount.setBalance(targetAccount.getBalance().add(input.amount()));
+        targetAccount.deposit(command.amount());
         accountRepository.save(targetAccount);
-        paymentRepository.save(payment);
 
-        // Record the ledger entry for the deposit
         ledgerRecorder.recordTransfer(new RecordTransferLedgerCommand(
                 targetAccount.getUuid(),
-                payment.getUuid(),
+                savedPayment.getUuid(),
                 LedgerType.CREDIT,
-                input.amount(),
+                command.amount(),
                 targetAccount.getCurrency(),
                 DEPOSIT_REASON
         ));
 
-        payment.setStatus(PaymentStatus.COMPLETED);
-        paymentRepository.save(payment);
+        var result = paymentApplicationMapper.toDepositResult(savedPayment);
 
-        // and return a DepositResponse object.
-        return DepositResponse.builder()
-                .paymentId(payment.getUuid())
-                .amount(input.amount())
-                .currency(targetAccount.getCurrency())
-                .build();
+        return depositMapper.toResponse(result);
     }
 }
