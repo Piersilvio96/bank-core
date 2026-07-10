@@ -33,7 +33,7 @@ public class WithdrawUseCase implements UseCase<WithdrawCommand, WithdrawResult>
     public WithdrawResult execute(WithdrawCommand command) {
         withdrawValidationRule.validate(command);
 
-        var targetAccount = accountRepository.findByUuid(command.accountUuid())
+        var targetAccount = accountRepository.findByUuidForUpdate(command.accountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(command.accountUuid()));
 
         var payment = paymentDomainMapper.toDomain(command);

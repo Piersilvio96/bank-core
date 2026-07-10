@@ -64,8 +64,8 @@ class TransferUseCaseTest {
         var savedPayment = samplePayment("payment-1", PaymentStatus.COMPLETED, "rent");
         var expected = new TransferResult("payment-1", new BigDecimal("30.00"), "EUR");
 
-        when(accountRepository.findByUuid("source-uuid")).thenReturn(Optional.of(sourceAccount));
-        when(accountRepository.findByUuid("target-uuid")).thenReturn(Optional.of(targetAccount));
+        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sourceAccount));
+        when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(targetAccount));
         when(paymentDomainMapper.toDomain(command)).thenReturn(pendingPayment);
         when(paymentRepository.save(pendingPayment)).thenReturn(savedPayment);
         when(paymentApplicationMapper.toTransferResult(savedPayment)).thenReturn(expected);
@@ -89,7 +89,7 @@ class TransferUseCaseTest {
     @Test
     void execute_shouldThrowWhenSourceAccountMissing() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
-        when(accountRepository.findByUuid("source-uuid")).thenReturn(Optional.empty());
+        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
 
@@ -100,8 +100,8 @@ class TransferUseCaseTest {
     @Test
     void execute_shouldThrowWhenTargetAccountMissing() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
-        when(accountRepository.findByUuid("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", new BigDecimal("50.00"))));
-        when(accountRepository.findByUuid("target-uuid")).thenReturn(Optional.empty());
+        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", new BigDecimal("50.00"))));
+        when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
 

@@ -30,10 +30,10 @@ public class TransferUseCase implements UseCase<TransferCommand, TransferResult>
     @Override
     public TransferResult execute(TransferCommand command) {
         transferValidationRule.validate(command);
-        var sourceAccount = accountRepository.findByUuid(command.sourceAccountUuid())
+        var sourceAccount = accountRepository.findByUuidForUpdate(command.sourceAccountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(command.sourceAccountUuid()));
 
-        var targetAccount = accountRepository.findByUuid(command.targetAccountUuid())
+        var targetAccount = accountRepository.findByUuidForUpdate(command.targetAccountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(command.targetAccountUuid()));
 
         var payment = paymentDomainMapper.toDomain(command);

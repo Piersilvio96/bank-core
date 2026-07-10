@@ -32,8 +32,8 @@ class TransferValidationRuleTest {
     @Test
     void validate_shouldPassForTwoActiveAccountsAndMatchingCurrency() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
-        when(accountRepository.findByUuid("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "EUR")));
-        when(accountRepository.findByUuid("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
+        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "EUR")));
+        when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
 
         assertDoesNotThrow(() -> validationRule.validate(command));
     }
@@ -41,7 +41,7 @@ class TransferValidationRuleTest {
     @Test
     void validate_shouldThrowWhenSourceMissing() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
-        when(accountRepository.findByUuid("source-uuid")).thenReturn(Optional.empty());
+        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> validationRule.validate(command));
     }
@@ -49,8 +49,8 @@ class TransferValidationRuleTest {
     @Test
     void validate_shouldThrowWhenTargetMissing() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
-        when(accountRepository.findByUuid("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "EUR")));
-        when(accountRepository.findByUuid("target-uuid")).thenReturn(Optional.empty());
+        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "EUR")));
+        when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> validationRule.validate(command));
     }
@@ -58,8 +58,8 @@ class TransferValidationRuleTest {
     @Test
     void validate_shouldThrowWhenSourceNotActive() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
-        when(accountRepository.findByUuid("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.CLOSED, "EUR")));
-        when(accountRepository.findByUuid("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
+        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.CLOSED, "EUR")));
+        when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
 
         assertThrows(AccountStatusException.class, () -> validationRule.validate(command));
     }
@@ -67,8 +67,8 @@ class TransferValidationRuleTest {
     @Test
     void validate_shouldThrowWhenTargetNotActive() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
-        when(accountRepository.findByUuid("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "EUR")));
-        when(accountRepository.findByUuid("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.CLOSED, "EUR")));
+        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "EUR")));
+        when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.CLOSED, "EUR")));
 
         assertThrows(AccountStatusException.class, () -> validationRule.validate(command));
     }
@@ -76,8 +76,8 @@ class TransferValidationRuleTest {
     @Test
     void validate_shouldThrowWhenCurrencyDiffersFromTarget() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "USD", "rent");
-        when(accountRepository.findByUuid("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "USD")));
-        when(accountRepository.findByUuid("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
+        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "USD")));
+        when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
 
         assertThrows(CurrencyAccountException.class, () -> validationRule.validate(command));
     }
@@ -85,8 +85,8 @@ class TransferValidationRuleTest {
     @Test
     void validate_shouldThrowWhenCurrencyDiffersFromSource() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
-        when(accountRepository.findByUuid("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "USD")));
-        when(accountRepository.findByUuid("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
+        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "USD")));
+        when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
 
         assertThrows(CurrencyAccountException.class, () -> validationRule.validate(command));
     }

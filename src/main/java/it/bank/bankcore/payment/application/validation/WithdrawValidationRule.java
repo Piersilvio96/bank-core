@@ -19,7 +19,7 @@ public class WithdrawValidationRule implements ValidationRule<WithdrawCommand> {
 
     @Override
     public void validate(WithdrawCommand input) {
-        var targetAccount = accountRepository.findByUuid(input.accountUuid())
+        var targetAccount = accountRepository.findByUuidForUpdate(input.accountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(input.accountUuid()));
 
         if (!ObjectUtils.nullSafeEquals(targetAccount.getStatus(), AccountStatus.ACTIVE)) {

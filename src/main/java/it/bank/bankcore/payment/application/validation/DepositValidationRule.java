@@ -19,7 +19,7 @@ public class DepositValidationRule implements ValidationRule<DepositCommand> {
 
     @Override
     public void validate(DepositCommand input) {
-        var targetAccount = accountRepository.findByUuid(input.accountUuid())
+        var targetAccount = accountRepository.findByUuidForUpdate(input.accountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(input.accountUuid()));
 
         if (!ObjectUtils.nullSafeEquals(targetAccount.getStatus(), AccountStatus.ACTIVE)) {

@@ -20,9 +20,9 @@ public class TransferValidationRule implements ValidationRule<TransferCommand> {
 
     @Override
     public void validate(TransferCommand input) {
-        var sourceAccount = accountRepository.findByUuid(input.sourceAccountUuid())
+        var sourceAccount = accountRepository.findByUuidForUpdate(input.sourceAccountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(input.sourceAccountUuid()));
-        var targetAccount = accountRepository.findByUuid(input.targetAccountUuid())
+        var targetAccount = accountRepository.findByUuidForUpdate(input.targetAccountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(input.targetAccountUuid()));
 
 

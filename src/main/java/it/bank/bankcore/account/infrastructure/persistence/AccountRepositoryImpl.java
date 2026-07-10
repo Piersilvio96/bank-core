@@ -31,6 +31,12 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
+    public Optional<Account> findByUuidForUpdate(String uuid) {
+        var accountJpaEntity = accountJpaRepository.findByUuidForUpdate(uuid);
+        return accountJpaEntity.map(accountJpaMapper::toDomain);
+    }
+
+    @Override
     public Boolean existsByFiscalCodeOrEmail(String fiscalCode, String email) {
         return accountJpaRepository.existsByFiscalCodeOrEmail(fiscalCode, email);
     }

@@ -32,7 +32,7 @@ class WithdrawValidationRuleTest {
     @Test
     void validate_shouldPassForActiveAccountAndMatchingCurrency() {
         var command = new WithdrawCommand("acc-uuid", new BigDecimal("10.00"), "EUR");
-        when(accountRepository.findByUuid("acc-uuid")).thenReturn(Optional.of(sampleAccount(AccountStatus.ACTIVE, "EUR")));
+        when(accountRepository.findByUuidForUpdate("acc-uuid")).thenReturn(Optional.of(sampleAccount(AccountStatus.ACTIVE, "EUR")));
 
         assertDoesNotThrow(() -> validationRule.validate(command));
     }
@@ -40,7 +40,7 @@ class WithdrawValidationRuleTest {
     @Test
     void validate_shouldThrowWhenAccountMissing() {
         var command = new WithdrawCommand("missing", new BigDecimal("10.00"), "EUR");
-        when(accountRepository.findByUuid("missing")).thenReturn(Optional.empty());
+        when(accountRepository.findByUuidForUpdate("missing")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> validationRule.validate(command));
     }
@@ -48,7 +48,7 @@ class WithdrawValidationRuleTest {
     @Test
     void validate_shouldThrowWhenAccountNotActive() {
         var command = new WithdrawCommand("acc-uuid", new BigDecimal("10.00"), "EUR");
-        when(accountRepository.findByUuid("acc-uuid")).thenReturn(Optional.of(sampleAccount(AccountStatus.CLOSED, "EUR")));
+        when(accountRepository.findByUuidForUpdate("acc-uuid")).thenReturn(Optional.of(sampleAccount(AccountStatus.CLOSED, "EUR")));
 
         assertThrows(AccountStatusException.class, () -> validationRule.validate(command));
     }
@@ -56,7 +56,7 @@ class WithdrawValidationRuleTest {
     @Test
     void validate_shouldThrowWhenCurrencyDiffers() {
         var command = new WithdrawCommand("acc-uuid", new BigDecimal("10.00"), "USD");
-        when(accountRepository.findByUuid("acc-uuid")).thenReturn(Optional.of(sampleAccount(AccountStatus.ACTIVE, "EUR")));
+        when(accountRepository.findByUuidForUpdate("acc-uuid")).thenReturn(Optional.of(sampleAccount(AccountStatus.ACTIVE, "EUR")));
 
         assertThrows(CurrencyAccountException.class, () -> validationRule.validate(command));
     }

@@ -63,7 +63,7 @@ class DepositUseCaseTest {
         var savedPayment = samplePayment("payment-1", PaymentStatus.COMPLETED);
         var expected = new DepositResult("payment-1", new BigDecimal("25.00"), "EUR");
 
-        when(accountRepository.findByUuid("acc-uuid")).thenReturn(Optional.of(targetAccount));
+        when(accountRepository.findByUuidForUpdate("acc-uuid")).thenReturn(Optional.of(targetAccount));
         when(paymentDomainMapper.toDomain(command)).thenReturn(pendingPayment);
         when(paymentRepository.save(pendingPayment)).thenReturn(savedPayment);
         when(paymentApplicationMapper.toDepositResult(savedPayment)).thenReturn(expected);
@@ -86,7 +86,7 @@ class DepositUseCaseTest {
     @Test
     void execute_shouldThrowWhenAccountNotFound() {
         var command = new DepositCommand("missing-uuid", new BigDecimal("10.00"), "EUR");
-        when(accountRepository.findByUuid("missing-uuid")).thenReturn(Optional.empty());
+        when(accountRepository.findByUuidForUpdate("missing-uuid")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
 
