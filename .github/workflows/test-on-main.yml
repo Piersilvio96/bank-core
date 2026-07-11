@@ -4,9 +4,21 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'gradle/**'
+      - 'src/**'
+      - 'test/**'
+      - 'build.gradle'
+      - 'settings.gradle'
   pull_request:
     branches:
       - main
+    paths:
+      - 'gradle/**'
+      - 'src/**'
+      - 'test/**'
+      - 'build.gradle'
+      - 'settings.gradle'
 
 permissions:
   contents: read
