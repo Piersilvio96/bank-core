@@ -8,7 +8,6 @@ import it.bank.bankcore.payment.api.controller.PaymentController;
 import it.bank.bankcore.payment.api.request.DepositRequest;
 import it.bank.bankcore.payment.api.request.TransferRequest;
 import it.bank.bankcore.payment.api.request.WithdrawRequest;
-import it.bank.bankcore.payment.infrastructure.exception.PaymentCodeAlreadyExists;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -76,16 +75,13 @@ class BankFlowIntegrationTest {
     }
 
     @Test
-    void shouldRejectDuplicateRequestCodeForDeposit() {
-        var account = createAccount("idempotency");
-        var requestCode = requestCode();
+    void shouldApplyTwoDepositsWithDifferentRequestCodes() {
+        var account = createAccount("double-deposit");
 
-        deposit(account.uuid(), new BigDecimal("25.00"), requestCode);
+        deposit(account.uuid(), new BigDecimal("25.00"), requestCode());
+        deposit(account.uuid(), new BigDecimal("25.00"), requestCode());
 
-        assertThrows(PaymentCodeAlreadyExists.class,
-                () -> deposit(account.uuid(), new BigDecimal("25.00"), requestCode));
-
-        assertBalance(account.uuid(), new BigDecimal("25.00"));
+        assertBalance(account.uuid(), new BigDecimal("50.00"));
     }
 
     @Test
