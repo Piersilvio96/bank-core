@@ -15,7 +15,7 @@ public class TransferMapper implements
 
     @Override
     public TransferCommand toCommand(TransferRequest request) {
-        return new TransferCommand(request.sourceAccountUuid(), request.targetAccountUuid(), request.amount(), request.currency(), request.reason());
+        return new TransferCommand(request.sourceAccountUuid(), request.targetAccountUuid(), request.amount(), request.currency(), request.reason(), request.requestCode());
     }
 
     @Override

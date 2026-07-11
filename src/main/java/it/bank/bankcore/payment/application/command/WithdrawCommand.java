@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record WithdrawCommand(
 		String accountUuid,
 		BigDecimal amount,
-		String currency
+		String currency,
+		String requestCode
 ) {
 }

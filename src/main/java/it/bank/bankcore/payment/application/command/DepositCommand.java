@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record DepositCommand(
 		String accountUuid,
 		BigDecimal amount,
-		String currency
+		String currency,
+		String requestCode
 ) {
 }

@@ -15,5 +15,7 @@ public record WithdrawRequest(
     @Positive(message = "Amount must be positive")
     BigDecimal amount,
     @Size(min = 3, max = 3, message = "Currency must be a 3-letter code")
-    String currency
+    String currency,
+    @NotNull(message = "Request code cannot be null")
+    String requestCode
 ){}

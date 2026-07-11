@@ -20,6 +20,7 @@ public class DepositDomainMapper implements DomainMapper <DepositCommand, Paymen
                 .currency(command.currency())
                 .reason(DEPOSIT_REASON)
                 .status(PaymentStatus.PENDING)
+                .requestCode(command.requestCode())
                 .build();
     }
 }

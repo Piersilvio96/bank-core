@@ -15,7 +15,7 @@ public class WithdrawMapper implements
 
     @Override
     public WithdrawCommand toCommand(WithdrawRequest request) {
-        return new WithdrawCommand(request.accountUuid(), request.amount(), request.currency());
+        return new WithdrawCommand(request.accountUuid(), request.amount(), request.currency(), request.requestCode());
     }
 
     @Override

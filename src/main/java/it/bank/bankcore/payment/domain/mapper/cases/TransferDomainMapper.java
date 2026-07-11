@@ -21,6 +21,7 @@ public class TransferDomainMapper implements DomainMapper <TransferCommand, Paym
                 .currency(command.currency())
                 .reason(ObjectUtils.isEmpty(command.reason()) ? TRANSFER_REASON : command.reason())
                 .status(PaymentStatus.PENDING)
+                .requestCode(command.requestCode())
                 .build();
     }
 }

@@ -15,7 +15,7 @@ public class DepositMapper implements
 
     @Override
     public DepositCommand toCommand(DepositRequest request) {
-        return new DepositCommand(request.accountUuid(), request.amount(), request.currency());
+        return new DepositCommand(request.accountUuid(), request.amount(), request.currency(), request.requestCode());
     }
 
     @Override

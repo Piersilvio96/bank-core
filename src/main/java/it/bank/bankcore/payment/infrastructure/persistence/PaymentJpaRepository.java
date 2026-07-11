@@ -11,4 +11,5 @@ public interface PaymentJpaRepository extends JpaRepository<PaymentJpaEntity, Lo
         JpaSpecificationExecutor<PaymentJpaEntity> {
 
     Optional<PaymentJpaEntity> findByUuid(String uuid);
+    Optional<PaymentJpaEntity> findByRequestCode(String requestCode);
 }

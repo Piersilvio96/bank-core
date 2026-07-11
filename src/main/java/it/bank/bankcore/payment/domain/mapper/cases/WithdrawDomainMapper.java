@@ -20,6 +20,7 @@ public class WithdrawDomainMapper implements DomainMapper <WithdrawCommand, Paym
                 .currency(command.currency())
                 .reason(WITHDRAW_REASON)
                 .status(PaymentStatus.PENDING)
+                .requestCode(command.requestCode())
                 .build();
     }
 }

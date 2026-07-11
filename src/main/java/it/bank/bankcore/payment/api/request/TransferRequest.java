@@ -18,5 +18,7 @@ public record TransferRequest(
     BigDecimal amount,
     @Size(min = 3, max = 3, message = "Currency must be a 3-letter code")
     String currency,
-    String reason
+    String reason,
+    @NotNull(message = "Request code cannot be null")
+    String requestCode
 ){}

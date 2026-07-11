@@ -7,6 +7,7 @@ public record TransferCommand(
 		String targetAccountUuid,
 		BigDecimal amount,
 		String currency,
-		String reason
+		String reason,
+		String requestCode
 ) {
 }

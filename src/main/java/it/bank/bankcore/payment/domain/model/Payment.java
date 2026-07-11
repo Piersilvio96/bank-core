@@ -21,6 +21,7 @@ public class Payment extends Base {
     private String reason;
     private PaymentStatus status;
     private String currency;
+    private String requestCode;
 
     public void complete() {
         this.status = PaymentStatus.COMPLETED;

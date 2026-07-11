@@ -26,6 +26,7 @@ public class PaymentJpaMapper implements JpaMapper<Payment, PaymentJpaEntity> {
                 .reason(entity.getReason())
                 .status(entity.getStatus())
                 .currency(entity.getCurrency())
+                .requestCode(entity.getRequestCode())
                 .build();
     }
 
@@ -50,6 +51,7 @@ public class PaymentJpaMapper implements JpaMapper<Payment, PaymentJpaEntity> {
                 .reason(domain.getReason())
                 .status(domain.getStatus())
                 .currency(domain.getCurrency())
+                .requestCode(domain.getRequestCode())
                 .build();
     }
 }
