@@ -28,6 +28,13 @@ public class TransferUseCase implements UseCase<TransferCommand, TransferResult>
 
     @Override
     public TransferResult execute(TransferCommand command) {
+
+        return paymentRepository.findByRequestCode(command.requestCode())
+                .map(paymentApplicationMapper::toTransferResult)
+                .orElseGet(() -> processNewTransfer(command));
+    }
+
+    private TransferResult processNewTransfer(TransferCommand command) {
         var validationResult = transferValidationRule.loadAndValidate(command);
         var sourceAccount = validationResult.sourceAccount();
         var targetAccount = validationResult.targetAccount();
@@ -52,5 +59,6 @@ public class TransferUseCase implements UseCase<TransferCommand, TransferResult>
         ));
 
         return paymentApplicationMapper.toTransferResult(savedPayment);
+
     }
 }

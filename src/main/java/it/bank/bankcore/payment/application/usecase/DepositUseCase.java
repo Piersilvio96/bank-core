@@ -30,6 +30,12 @@ public class DepositUseCase implements UseCase<DepositCommand, DepositResult> {
 
     @Override
     public DepositResult execute(DepositCommand command) {
+        return paymentRepository.findByRequestCode(command.requestCode())
+                .map(paymentApplicationMapper::toDepositResult)
+                .orElseGet(() -> processNewDeposit(command));
+    }
+
+    private DepositResult processNewDeposit(DepositCommand command) {
         var targetAccount = depositValidationRule.loadAndValidate(command);
 
         var payment = paymentDomainMapper.toDomain(command);

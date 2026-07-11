@@ -30,6 +30,12 @@ public class WithdrawUseCase implements UseCase<WithdrawCommand, WithdrawResult>
 
     @Override
     public WithdrawResult execute(WithdrawCommand command) {
+        return paymentRepository.findByRequestCode(command.requestCode())
+                .map(paymentApplicationMapper::toWithdrawResult)
+                .orElseGet(() -> processNewWithdraw(command));
+    }
+
+    private WithdrawResult processNewWithdraw(WithdrawCommand command) {
         var targetAccount = withdrawValidationRule.loadAndValidate(command);
 
         var payment = paymentDomainMapper.toDomain(command);

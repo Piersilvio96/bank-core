@@ -7,6 +7,8 @@ import it.bank.bankcore.payment.infrastructure.persistence.mapper.PaymentJpaMapp
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 @RequiredArgsConstructor
 public class PaymentRepositoryImpl implements PaymentRepository {
@@ -22,6 +24,12 @@ public class PaymentRepositoryImpl implements PaymentRepository {
         var paymentEntity = paymentJpaMapper.toEntity(payment);
         var savedEntity = paymentJpaRepository.save(paymentEntity);
         return paymentJpaMapper.toDomain(savedEntity);
+    }
+
+    @Override
+    public Optional<Payment> findByRequestCode(String requestCode) {
+        return paymentJpaRepository.findByRequestCode(requestCode)
+                .map(paymentJpaMapper::toDomain);
     }
 }
 
