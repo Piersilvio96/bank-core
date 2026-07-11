@@ -31,7 +31,7 @@ class TransferValidationRuleTest {
 
     @Test
     void validate_shouldPassForTwoActiveAccountsAndMatchingCurrency() {
-        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-val-1");
         when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "EUR")));
         when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
 
@@ -40,7 +40,7 @@ class TransferValidationRuleTest {
 
     @Test
     void validate_shouldThrowWhenSourceMissing() {
-        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-val-2");
         when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> validationRule.validate(command));
@@ -48,7 +48,7 @@ class TransferValidationRuleTest {
 
     @Test
     void validate_shouldThrowWhenTargetMissing() {
-        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-val-3");
         when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "EUR")));
         when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.empty());
 
@@ -57,7 +57,7 @@ class TransferValidationRuleTest {
 
     @Test
     void validate_shouldThrowWhenSourceNotActive() {
-        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-val-4");
         when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.CLOSED, "EUR")));
         when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
 
@@ -66,7 +66,7 @@ class TransferValidationRuleTest {
 
     @Test
     void validate_shouldThrowWhenTargetNotActive() {
-        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-val-5");
         when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "EUR")));
         when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.CLOSED, "EUR")));
 
@@ -75,7 +75,7 @@ class TransferValidationRuleTest {
 
     @Test
     void validate_shouldThrowWhenCurrencyDiffersFromTarget() {
-        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "USD", "rent");
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "USD", "rent", "req-transfer-val-6");
         when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "USD")));
         when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
 
@@ -84,7 +84,7 @@ class TransferValidationRuleTest {
 
     @Test
     void validate_shouldThrowWhenCurrencyDiffersFromSource() {
-        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-val-7");
         when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", AccountStatus.ACTIVE, "USD")));
         when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
 

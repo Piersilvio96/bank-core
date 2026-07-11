@@ -57,7 +57,7 @@ class DepositUseCaseTest {
 
     @Test
     void execute_shouldDepositAndRecordLedgerEntry() {
-        var command = new DepositCommand("acc-uuid", new BigDecimal("25.00"), "EUR");
+        var command = new DepositCommand("acc-uuid", new BigDecimal("25.00"), "EUR", "req-deposit-1");
         var targetAccount = sampleAccount();
         var pendingPayment = samplePayment("payment-1", PaymentStatus.PENDING);
         var savedPayment = samplePayment("payment-1", PaymentStatus.COMPLETED);
@@ -85,7 +85,7 @@ class DepositUseCaseTest {
 
     @Test
     void execute_shouldThrowWhenAccountNotFound() {
-        var command = new DepositCommand("missing-uuid", new BigDecimal("10.00"), "EUR");
+        var command = new DepositCommand("missing-uuid", new BigDecimal("10.00"), "EUR", "req-deposit-2");
         when(accountRepository.findByUuidForUpdate("missing-uuid")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));

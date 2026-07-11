@@ -31,7 +31,7 @@ class WithdrawValidationRuleTest {
 
     @Test
     void validate_shouldPassForActiveAccountAndMatchingCurrency() {
-        var command = new WithdrawCommand("acc-uuid", new BigDecimal("10.00"), "EUR");
+        var command = new WithdrawCommand("acc-uuid", new BigDecimal("10.00"), "EUR", "req-withdraw-val-1");
         when(accountRepository.findByUuidForUpdate("acc-uuid")).thenReturn(Optional.of(sampleAccount(AccountStatus.ACTIVE, "EUR")));
 
         assertDoesNotThrow(() -> validationRule.validate(command));
@@ -39,7 +39,7 @@ class WithdrawValidationRuleTest {
 
     @Test
     void validate_shouldThrowWhenAccountMissing() {
-        var command = new WithdrawCommand("missing", new BigDecimal("10.00"), "EUR");
+        var command = new WithdrawCommand("missing", new BigDecimal("10.00"), "EUR", "req-withdraw-val-2");
         when(accountRepository.findByUuidForUpdate("missing")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> validationRule.validate(command));
@@ -47,7 +47,7 @@ class WithdrawValidationRuleTest {
 
     @Test
     void validate_shouldThrowWhenAccountNotActive() {
-        var command = new WithdrawCommand("acc-uuid", new BigDecimal("10.00"), "EUR");
+        var command = new WithdrawCommand("acc-uuid", new BigDecimal("10.00"), "EUR", "req-withdraw-val-3");
         when(accountRepository.findByUuidForUpdate("acc-uuid")).thenReturn(Optional.of(sampleAccount(AccountStatus.CLOSED, "EUR")));
 
         assertThrows(AccountStatusException.class, () -> validationRule.validate(command));
@@ -55,7 +55,7 @@ class WithdrawValidationRuleTest {
 
     @Test
     void validate_shouldThrowWhenCurrencyDiffers() {
-        var command = new WithdrawCommand("acc-uuid", new BigDecimal("10.00"), "USD");
+        var command = new WithdrawCommand("acc-uuid", new BigDecimal("10.00"), "USD", "req-withdraw-val-4");
         when(accountRepository.findByUuidForUpdate("acc-uuid")).thenReturn(Optional.of(sampleAccount(AccountStatus.ACTIVE, "EUR")));
 
         assertThrows(CurrencyAccountException.class, () -> validationRule.validate(command));

@@ -57,7 +57,7 @@ class TransferUseCaseTest {
 
     @Test
     void execute_shouldTransferAndRecordLedgerEntries() {
-        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("30.00"), "EUR", "rent");
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("30.00"), "EUR", "rent", "req-transfer-1");
         var sourceAccount = sampleAccount("source-uuid", new BigDecimal("100.00"));
         var targetAccount = sampleAccount("target-uuid", new BigDecimal("20.00"));
         var pendingPayment = samplePayment("payment-1", PaymentStatus.PENDING, "rent");
@@ -88,7 +88,7 @@ class TransferUseCaseTest {
 
     @Test
     void execute_shouldThrowWhenSourceAccountMissing() {
-        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-2");
         when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
@@ -99,7 +99,7 @@ class TransferUseCaseTest {
 
     @Test
     void execute_shouldThrowWhenTargetAccountMissing() {
-        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent");
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-3");
         when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", new BigDecimal("50.00"))));
         when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.empty());
 

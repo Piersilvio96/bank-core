@@ -57,7 +57,7 @@ class WithdrawUseCaseTest {
 
     @Test
     void execute_shouldWithdrawAndRecordLedgerEntry() {
-        var command = new WithdrawCommand("acc-uuid", new BigDecimal("25.00"), "EUR");
+        var command = new WithdrawCommand("acc-uuid", new BigDecimal("25.00"), "EUR", "req-withdraw-1");
         var targetAccount = sampleAccount();
         var pendingPayment = samplePayment("payment-1", PaymentStatus.PENDING, "Withdraw");
         var savedPayment = samplePayment("payment-1", PaymentStatus.COMPLETED, "Withdraw");
@@ -84,7 +84,7 @@ class WithdrawUseCaseTest {
 
     @Test
     void execute_shouldThrowWhenAccountNotFound() {
-        var command = new WithdrawCommand("missing-uuid", new BigDecimal("10.00"), "EUR");
+        var command = new WithdrawCommand("missing-uuid", new BigDecimal("10.00"), "EUR", "req-withdraw-2");
         when(accountRepository.findByUuidForUpdate("missing-uuid")).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
