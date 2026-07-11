@@ -14,6 +14,7 @@ import it.bank.bankcore.payment.application.usecase.TransferUseCase;
 import it.bank.bankcore.payment.application.usecase.WithdrawUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,24 +33,24 @@ public class PaymentController {
     private final TransferUseCase transferUseCase;
 
     @PostMapping("/deposit")
-    public DepositResponse deposit(@Valid @RequestBody DepositRequest input)
+    public ResponseEntity<DepositResponse> deposit(@Valid @RequestBody DepositRequest input)
     {
         var result = depositUseCase.execute(depositMapper.toCommand(input));
-        return depositMapper.toResponse(result);
+        return ResponseEntity.ok(depositMapper.toResponse(result));
     }
 
     @PostMapping("/withdraw")
-    public WithdrawResponse withdraw(@Valid @RequestBody WithdrawRequest input)
+    public ResponseEntity<WithdrawResponse> withdraw(@Valid @RequestBody WithdrawRequest input)
     {
         var result = withdrawUseCase.execute(withdrawMapper.toCommand(input));
-        return withdrawMapper.toResponse(result);
+        return ResponseEntity.ok(withdrawMapper.toResponse(result));
     }
 
     @PostMapping("/transfer")
-    public TransferResponse transfer(@Valid @RequestBody TransferRequest input)
+    public ResponseEntity<TransferResponse> transfer(@Valid @RequestBody TransferRequest input)
     {
         var result = transferUseCase.execute(transferMapper.toCommand(input));
-        return transferMapper.toResponse(result);
+        return ResponseEntity.ok(transferMapper.toResponse(result));
     }
 
 }

@@ -140,11 +140,11 @@ class BankFlowIntegrationTest {
     }
 
     private it.bank.bankcore.payment.api.response.DepositResponse deposit(String accountUuid, BigDecimal amount, String requestCode) {
-        return paymentController.deposit(new DepositRequest(accountUuid, amount, "EUR", requestCode));
+        return paymentController.deposit(new DepositRequest(accountUuid, amount, "EUR", requestCode)).getBody();
     }
 
     private it.bank.bankcore.payment.api.response.WithdrawResponse withdraw(String accountUuid, BigDecimal amount) {
-        return paymentController.withdraw(new WithdrawRequest(accountUuid, amount, "EUR", requestCode()));
+        return paymentController.withdraw(new WithdrawRequest(accountUuid, amount, "EUR", requestCode())).getBody();
     }
 
     private it.bank.bankcore.payment.api.response.TransferResponse transfer(String sourceAccountUuid,
@@ -158,11 +158,11 @@ class BankFlowIntegrationTest {
                 "EUR",
                 reason,
                 requestCode()
-        ));
+        )).getBody();
     }
 
     private void assertBalance(String accountUuid, BigDecimal expectedBalance) {
-        var balanceResponse = accountController.getAccountBalance(accountUuid);
+        var balanceResponse = accountController.getAccountBalance(accountUuid).getBody();
         assertEquals(0, balanceResponse.balance().compareTo(expectedBalance));
         assertEquals("EUR", balanceResponse.currency());
     }
@@ -184,7 +184,7 @@ class BankFlowIntegrationTest {
                 "RM",
                 "Italy",
                 "EUR"
-        ));
+        )).getBody();
     }
 }
 

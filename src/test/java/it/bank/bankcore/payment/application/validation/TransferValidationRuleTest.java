@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -89,6 +90,19 @@ class TransferValidationRuleTest {
         when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(sampleAccount("target-uuid", AccountStatus.ACTIVE, "EUR")));
 
         assertThrows(CurrencyAccountException.class, () -> validationRule.validate(command));
+    }
+
+    @Test
+    void validate_shouldLockAccountsInDeterministicOrder() {
+        var command = new TransferCommand("z-source", "a-target", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-val-8");
+        when(accountRepository.findByUuidForUpdate("a-target")).thenReturn(Optional.of(sampleAccount("a-target", AccountStatus.ACTIVE, "EUR")));
+        when(accountRepository.findByUuidForUpdate("z-source")).thenReturn(Optional.of(sampleAccount("z-source", AccountStatus.ACTIVE, "EUR")));
+
+        assertDoesNotThrow(() -> validationRule.validate(command));
+
+        var order = inOrder(accountRepository);
+        order.verify(accountRepository).findByUuidForUpdate("a-target");
+        order.verify(accountRepository).findByUuidForUpdate("z-source");
     }
 
     private Account sampleAccount(String uuid, AccountStatus status, String currency) {

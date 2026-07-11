@@ -112,6 +112,50 @@ class ApiMockMvcPostgresIntegrationTest {
     }
 
     @Test
+    void shouldReturnSamePaymentWhenDepositRequestCodeIsReused() throws Exception {
+        var uuid = createAccount("mockmvc-idempotency");
+        var requestCode = UUID.randomUUID().toString();
+
+        var firstResponse = mockMvc.perform(post("/api/v1/payments/deposit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "accountUuid": "%s",
+                                  "amount": 25.00,
+                                  "currency": "EUR",
+                                  "requestCode": "%s"
+                                }
+                                """.formatted(uuid, requestCode)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        var secondResponse = mockMvc.perform(post("/api/v1/payments/deposit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "accountUuid": "%s",
+                                  "amount": 25.00,
+                                  "currency": "EUR",
+                                  "requestCode": "%s"
+                                }
+                                """.formatted(uuid, requestCode)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String firstPaymentId = JsonPath.read(firstResponse, "$.paymentId");
+        String secondPaymentId = JsonPath.read(secondResponse, "$.paymentId");
+        org.junit.jupiter.api.Assertions.assertEquals(firstPaymentId, secondPaymentId);
+
+        mockMvc.perform(get("/api/v1/accounts/{uuid}/balance", uuid))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.balance").value(25.00));
+    }
+
+    @Test
     void shouldReturnBadRequestWhenDepositPayloadIsInvalid() throws Exception {
         var uuid = createAccount("mockmvc-invalid");
 
@@ -212,7 +256,7 @@ class ApiMockMvcPostgresIntegrationTest {
         mockMvc.perform(post("/api/v1/accounts")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/accounts")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -296,7 +340,7 @@ class ApiMockMvcPostgresIntegrationTest {
                                   "currency": "EUR"
                                 }
                                 """.formatted(userPrefix, suffix, suffix.toUpperCase())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.uuid").isNotEmpty())
                 .andReturn()
                 .getResponse()

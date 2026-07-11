@@ -1,21 +1,22 @@
 package it.bank.bankcore.payment.api.request;
 
-
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
 public record DepositRequest (
-    @NotEmpty(message = "Account UUID cannot be empty")
+    @NotBlank(message = "Account UUID cannot be blank")
     String accountUuid,
     @NotNull(message = "Amount cannot be null")
     @Positive(message = "Amount must be positive")
     BigDecimal amount,
-    @Size(min = 3, max = 3, message = "Currency must be a 3-letter code")
+    @NotBlank(message = "Currency cannot be blank")
+    @Pattern(regexp = "^[A-Z]{3}$", message = "Currency must be a 3-letter uppercase ISO code")
     String currency,
-    @NotNull(message = "Request code cannot be null")
+    @NotBlank(message = "Request code cannot be blank")
+    @Pattern(regexp = "^[A-Za-z0-9._:-]{8,64}$", message = "Request code format is invalid")
     String requestCode
 ){}

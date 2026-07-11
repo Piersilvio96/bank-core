@@ -3,6 +3,7 @@ package it.bank.bankcore.payment.application.validation;
 import it.bank.bankcore.account.domain.enums.AccountStatus;
 import it.bank.bankcore.account.domain.exception.AccountNotFoundException;
 import it.bank.bankcore.account.domain.exception.AccountStatusException;
+import it.bank.bankcore.account.domain.model.Account;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.payment.application.command.TransferCommand;
 import it.bank.bankcore.payment.domain.exception.CurrencyAccountException;
@@ -24,12 +25,37 @@ public class TransferValidationRule implements ValidationRule<TransferCommand> {
     }
 
     public TransferValidationResult loadAndValidate(TransferCommand input) {
-        var sourceAccount = accountRepository.findByUuidForUpdate(input.sourceAccountUuid())
-                .orElseThrow(() -> new AccountNotFoundException(input.sourceAccountUuid()));
-        var targetAccount = accountRepository.findByUuidForUpdate(input.targetAccountUuid())
-                .orElseThrow(() -> new AccountNotFoundException(input.targetAccountUuid()));
+        if (ObjectUtils.nullSafeEquals(input.sourceAccountUuid(), input.targetAccountUuid())) {
+            throw new SameAccountTransferException(input.sourceAccountUuid());
+        }
 
+        String firstUuid = input.sourceAccountUuid().compareTo(input.targetAccountUuid()) <= 0
+                ? input.sourceAccountUuid()
+                : input.targetAccountUuid();
+        String secondUuid = input.sourceAccountUuid().compareTo(input.targetAccountUuid()) <= 0
+                ? input.targetAccountUuid()
+                : input.sourceAccountUuid();
 
+        var firstAccount = accountRepository.findByUuidForUpdate(firstUuid).orElse(null);
+        var secondAccount = accountRepository.findByUuidForUpdate(secondUuid).orElse(null);
+
+        var sourceAccount = firstUuid.equals(input.sourceAccountUuid()) ? firstAccount : secondAccount;
+        var targetAccount = firstUuid.equals(input.sourceAccountUuid()) ? secondAccount : firstAccount;
+
+        if (sourceAccount == null) {
+            throw new AccountNotFoundException(input.sourceAccountUuid());
+        }
+
+        if (targetAccount == null) {
+            throw new AccountNotFoundException(input.targetAccountUuid());
+        }
+
+        validateBusinessRules(input, sourceAccount, targetAccount);
+
+        return new TransferValidationResult(sourceAccount, targetAccount);
+    }
+
+    private void validateBusinessRules(TransferCommand input, Account sourceAccount, Account targetAccount) {
         if (!ObjectUtils.nullSafeEquals(sourceAccount.getStatus(), AccountStatus.ACTIVE)) {
             throw new AccountStatusException(sourceAccount.getStatus(), AccountStatus.ACTIVE);
         }
@@ -38,7 +64,6 @@ public class TransferValidationRule implements ValidationRule<TransferCommand> {
             throw new AccountStatusException(targetAccount.getStatus(), AccountStatus.ACTIVE);
         }
 
-
         if (!ObjectUtils.nullSafeEquals(targetAccount.getCurrency(), input.currency())) {
             throw new CurrencyAccountException(targetAccount.getCurrency(), input.currency());
         }
@@ -46,12 +71,6 @@ public class TransferValidationRule implements ValidationRule<TransferCommand> {
         if (!ObjectUtils.nullSafeEquals(sourceAccount.getCurrency(), input.currency())) {
             throw new CurrencyAccountException(sourceAccount.getCurrency(), input.currency());
         }
-
-        if (ObjectUtils.nullSafeEquals(sourceAccount.getUuid(), targetAccount.getUuid())) {
-            throw new SameAccountTransferException(sourceAccount.getUuid());
-        }
-
-        return new TransferValidationResult(sourceAccount, targetAccount);
     }
 
 }
