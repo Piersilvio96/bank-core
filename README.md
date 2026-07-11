@@ -2,13 +2,19 @@
 
 [![Test on main](https://github.com/Piersilvio96/bank-core/actions/workflows/test-on-main.yml/badge.svg)](https://github.com/Piersilvio96/bank-core/actions/workflows/test-on-main.yml)
 
-BankCore is the application core of a banking platform in progress. The project currently exposes the first account-related flow, while the structure is intended to grow into a broader banking backend covering customers, accounts, ledger entries, payments, cards, security, audit, and external integrations.
+BankCore is the backend core of a modular banking platform built with a clean architecture style. It currently includes account management, payments, and ledger recording, with PostgreSQL persistence and versioned schema migrations.
 
-## Project Goal
+## What Is Implemented
 
-The goal is to build a modular backend for a digital bank, with a clear separation between REST APIs, application use cases, domain logic, and persistence.
-
-The current implementation starts from the `account` domain. It supports creating a customer account, validates the incoming request, and prevents duplicates by fiscal code or email.
+- Account creation with duplicate prevention (`fiscalCode` or `email`).
+- Account read APIs (`GET account` and `GET balance`).
+- Payment flows:
+  - deposit,
+  - withdraw,
+  - transfer.
+- Ledger entries for each payment operation.
+- Request code propagation in payment commands/requests.
+- Global API error handling (`400`, `409`, `500` depending on exception type).
 
 ## Tech Stack
 
@@ -18,12 +24,15 @@ The current implementation starts from the `account` domain. It supports creatin
 - Spring Data JPA
 - Bean Validation
 - PostgreSQL
+- Flyway
 - Gradle
 - Lombok
 - Springdoc OpenAPI
 - Docker Compose
+- Testcontainers (PostgreSQL)
+- ArchUnit
 
-## Project Structure
+## Architecture
 
 ```text
 src/main/java/it/bank/bankcore
@@ -50,94 +59,86 @@ src/main/java/it/bank/bankcore
     |-- api
     |-- application
     |-- domain
-|-- exception
-`-- infrastructure
+    |-- exception
+    `-- infrastructure
 ```
 
-## Main Modules
+### Layer Conventions
 
-### Account
+- `api`: controllers + request/response DTO + API mappers.
+- `application`: use cases, commands/queries/results, orchestration.
+- `domain`: business models, rules, domain exceptions, repository contracts.
+- `infrastructure`: JPA entities/repositories/mappers and DB adapters.
+- `shared`: common abstractions and exception handling.
 
-Handles customer account creation.
+## ArchUnit Rules
 
-Main components:
+The test suite includes architecture checks in `src/test/java/it/bank/bankcore/architecture/ArchitectureTest.java`:
 
-- `AccountController`: exposes the account REST API.
-- `CreateAccountUseCase`: contains the account creation flow.
-- `AccountEntity`: represents the persisted account.
-- `AccountRepository`: JPA repository with specification support.
-- `CreateAccountCriteriaSpecification`: checks whether an account already exists with the same fiscal code or email.
+- application layer must not depend on api layer,
+- api layer must not depend on infrastructure layer,
+- use cases must implement the shared `UseCase` contract,
+- package slices must be free of cycles.
 
-### Shared
+## Database and Migrations
 
-Contains reusable building blocks across domains:
+### Runtime configuration
 
-- `BaseEntity`: common persistence fields.
-- `UseCase`: generic application use case contract.
-- `ErrorResponse`: base API error response.
-- `SharedExceptionHandler`: centralized exception handling.
+- PostgreSQL datasource is defined in `src/main/resources/application.yaml`.
+- JPA schema mode is:
+
+```yaml
+spring.jpa.hibernate.ddl-auto: validate
+```
+
+- Flyway is enabled and scans:
+
+```yaml
+spring.flyway.locations: classpath:db/migration
+```
+
+### Migration files
+
+- `src/main/resources/db/migration/V1__init_schema.sql` creates:
+  - `accounts`,
+  - `payments`,
+  - `ledger_entries`.
 
 ## Requirements
 
 - JDK 21
-- Docker and Docker Compose
-- Gradle Wrapper, already included in the project
+- Docker + Docker Compose
+- Gradle Wrapper (already in repo)
 
 ## Local Setup
 
 Start PostgreSQL:
 
-```bash
+```powershell
 docker compose up -d
 ```
 
-Run the application on Windows:
+Run application (Windows PowerShell):
 
-```bash
+```powershell
 .\gradlew.bat bootRun
 ```
 
-Run the application on Linux/macOS:
-
-```bash
-./gradlew bootRun
-```
-
-The application starts on:
+Application base URL:
 
 ```text
 http://localhost:8080
 ```
 
-## Database
+## API Overview
 
-The local environment uses PostgreSQL:
+### Account APIs
 
-```yaml
-database: bankcore
-username: bankcore
-password: password
-port: 5432
-```
+- `POST /api/v1/accounts`
+- `GET /api/v1/accounts/{uuid}`
+- `GET /api/v1/accounts/{uuid}/balance`
 
-Hibernate is currently configured with:
-
-```yaml
-spring.jpa.hibernate.ddl-auto: update
-```
-
-This is convenient during early development, but a real banking system should use versioned database migrations, such as Flyway or Liquibase.
-
-## Available APIs
-
-### Create Account
-
-```http
-POST /api/v1/accounts
-Content-Type: application/json
-```
-
-Request body:
+Create account payload example:
 
 ```json
 {
@@ -146,121 +147,87 @@ Request body:
   "email": "mario.rossi@example.com",
   "phoneNumber": "+393331234567",
   "fiscalCode": "RSSMRA80A01H501U",
-  "city": "Rome",
-  "state": "RM",
-  "country": "Italy"
-}
-```
-
-Example response:
-
-```json
-{
-  "accountNumber": null,
-  "firstName": "Mario",
-  "lastName": "Rossi",
-  "email": "mario.rossi@example.com",
-  "fiscalCode": "RSSMRA80A01H501U",
-  "phoneNumber": "+393331234567",
   "city": "Rome",
   "state": "RM",
   "country": "Italy",
-  "balance": 0
+  "currency": "EUR"
 }
 ```
 
-Note: `accountNumber` already exists in the response model, but it is not generated by the current use case yet.
+### Payment APIs
 
-## Current Validations
+- `POST /api/v1/payments/deposit`
+- `POST /api/v1/payments/withdraw`
+- `POST /api/v1/payments/transfer`
 
-Account creation currently requires:
+Deposit payload example:
 
-- first name and last name;
-- a valid email address;
-- an international phone number format;
-- fiscal code;
-- city, state, and country;
-- no existing account with the same fiscal code or email.
-
-## OpenAPI Documentation
-
-The project includes Springdoc OpenAPI. When the application is running, the Swagger UI should be available at:
-
-```text
-http://localhost:8080/swagger-ui.html
+```json
+{
+  "accountUuid": "a1b2c3d4-...",
+  "amount": 25.00,
+  "currency": "EUR",
+  "requestCode": "REQ-123"
+}
 ```
 
-or:
+Transfer payload example:
+
+```json
+{
+  "sourceAccountUuid": "source-uuid",
+  "targetAccountUuid": "target-uuid",
+  "amount": 30.00,
+  "currency": "EUR",
+  "reason": "rent",
+  "requestCode": "REQ-TRANSFER-1"
+}
+```
+
+## Validation and Error Mapping
+
+- API DTO validation errors return `400`.
+- Business rule constraint violations (e.g. duplicate account) return `409`.
+- Unhandled infrastructure/runtime errors return `500`.
+
+Handled by `shared.exception.SharedExceptionHandler`.
+
+## Testing
+
+### Main test types in project
+
+- Unit tests for domain/use case/mapper components.
+- Integration flow tests (`BankFlowIntegrationTest`).
+- API tests with `MockMvc` + `Testcontainers` PostgreSQL (`ApiMockMvcPostgresIntegrationTest`).
+- Architecture tests with ArchUnit (`ArchitectureTest`).
+
+### Run all tests (Windows PowerShell)
+
+```powershell
+.\gradlew.bat test --no-daemon
+```
+
+### Run only MockMvc + PostgreSQL API tests
+
+```powershell
+.\gradlew.bat test --tests "it.bank.bankcore.integration.ApiMockMvcPostgresIntegrationTest" --no-daemon
+```
+
+## OpenAPI
+
+When the app is running:
 
 ```text
 http://localhost:8080/swagger-ui/index.html
 ```
 
-## Tests
-
-Run tests on Windows:
-
-```bash
-.\gradlew.bat test
-```
-
-Run tests on Linux/macOS:
-
-```bash
-./gradlew test
-```
-
-## Banking Platform Vision
-
-BankCore can evolve into a banking platform made of independent but consistent domains:
-
-- Customer: customer profiles, KYC, consents, documents.
-- Account: current accounts, account numbers, IBANs, balances, account statuses.
-- Ledger: accounting movements, double-entry bookkeeping, reconciliation.
-- Payments: transfers, internal transfers, direct debits, scheduled payments.
-
-[//]: # (- Cards: physical and virtual cards, limits, blocks, authorizations.)
-
-[//]: # (- Security: authentication, authorization, MFA, sessions, roles.)
-
-[//]: # (- Compliance: audit trail, AML checks, fraud monitoring.)
-
-[//]: # (- Notification: email, SMS, push notifications, operational messages.)
-
-[//]: # (- Reporting: statements, internal reports, operational metrics.)
-
-## Suggested Roadmap
-
-1. Generate an account number or IBAN during account creation.
-2. Add unique constraints and indexes for email, fiscal code, and account number.
-3. Replace `ddl-auto: update` with Flyway or Liquibase migrations.
-4. Introduce more specific API errors for validation failures and conflicts.
-5. Add account lookup, account listing, and balance endpoints.
-6. Model transactions and movements with an append-only ledger.
-7. Add authentication and authorization before exposing sensitive operations.
-8. Add unit tests, integration tests, and API tests.
-9. Prepare separate profiles for local, test, and production environments.
-10. Add observability with structured logs, metrics, and tracing.
-
-## Architectural Conventions
-
-The project follows a lightweight clean architecture style:
-
-- `api`: controllers, request/response DTO, API mappers (`Request -> Command`, `Result -> Response`).
-- `application`: use cases, commands/queries/results, application ports.
-- `domain`: business models, business rules, domain exceptions, repository abstractions.
-- `infrastructure`: JPA entities/repositories/specifications, persistence mappers, DB-specific adapters.
-- `shared`: cross-cutting contracts and exception handling.
-
-Boundary rules enforced by convention:
-
-- Use cases do not depend on `api` classes.
-- Use cases do not depend on `infrastructure` classes.
-- Controllers do not depend on JPA entities/repositories.
-- Validation annotations stay on API request DTO.
-
-This structure keeps the domain readable and gives the codebase room to grow as more banking capabilities are added.
-
 ## Current Status
 
-BankCore is in an early stage. The Spring Boot foundation is in place, PostgreSQL is configured through Docker Compose, and the first account creation flow exists. The next major improvements should focus on banking identifiers, data consistency, security, auditability, and tests.
+The project currently has account, payment, and ledger flows running with:
+
+- PostgreSQL persistence,
+- Flyway migrations,
+- architecture guardrails (ArchUnit),
+- API integration tests with MockMvc + Testcontainers.
+
+Next improvements can focus on stricter idempotency behavior, security/auth, and richer operational observability.
