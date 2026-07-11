@@ -10,6 +10,7 @@ import it.bank.bankcore.payment.application.command.TransferCommand;
 import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
 import it.bank.bankcore.payment.application.result.TransferResult;
 import it.bank.bankcore.payment.application.validation.TransferValidationRule;
+import it.bank.bankcore.payment.application.validation.TransferValidationResult;
 import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
 import it.bank.bankcore.payment.domain.model.Payment;
@@ -22,7 +23,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -64,8 +64,7 @@ class TransferUseCaseTest {
         var savedPayment = samplePayment("payment-1", PaymentStatus.COMPLETED, "rent");
         var expected = new TransferResult("payment-1", new BigDecimal("30.00"), "EUR");
 
-        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sourceAccount));
-        when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.of(targetAccount));
+        when(transferValidationRule.loadAndValidate(command)).thenReturn(new TransferValidationResult(sourceAccount, targetAccount));
         when(paymentDomainMapper.toDomain(command)).thenReturn(pendingPayment);
         when(paymentRepository.save(pendingPayment)).thenReturn(savedPayment);
         when(paymentApplicationMapper.toTransferResult(savedPayment)).thenReturn(expected);
@@ -89,7 +88,7 @@ class TransferUseCaseTest {
     @Test
     void execute_shouldThrowWhenSourceAccountMissing() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-2");
-        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.empty());
+        when(transferValidationRule.loadAndValidate(command)).thenThrow(new AccountNotFoundException("source-uuid"));
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
 
@@ -100,8 +99,7 @@ class TransferUseCaseTest {
     @Test
     void execute_shouldThrowWhenTargetAccountMissing() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-3");
-        when(accountRepository.findByUuidForUpdate("source-uuid")).thenReturn(Optional.of(sampleAccount("source-uuid", new BigDecimal("50.00"))));
-        when(accountRepository.findByUuidForUpdate("target-uuid")).thenReturn(Optional.empty());
+        when(transferValidationRule.loadAndValidate(command)).thenThrow(new AccountNotFoundException("target-uuid"));
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
 

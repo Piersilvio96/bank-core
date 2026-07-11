@@ -1,6 +1,5 @@
 package it.bank.bankcore.payment.application.usecase;
 
-import it.bank.bankcore.account.domain.exception.AccountNotFoundException;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.ledger.application.command.RecordWithdrawLedgerCommand;
 import it.bank.bankcore.ledger.application.port.LedgerRecorder;
@@ -31,10 +30,7 @@ public class WithdrawUseCase implements UseCase<WithdrawCommand, WithdrawResult>
 
     @Override
     public WithdrawResult execute(WithdrawCommand command) {
-        withdrawValidationRule.validate(command);
-
-        var targetAccount = accountRepository.findByUuidForUpdate(command.accountUuid())
-                .orElseThrow(() -> new AccountNotFoundException(command.accountUuid()));
+        var targetAccount = withdrawValidationRule.loadAndValidate(command);
 
         var payment = paymentDomainMapper.toDomain(command);
         payment.complete();

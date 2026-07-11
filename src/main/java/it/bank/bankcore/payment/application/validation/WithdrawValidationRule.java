@@ -3,6 +3,7 @@ package it.bank.bankcore.payment.application.validation;
 import it.bank.bankcore.account.domain.enums.AccountStatus;
 import it.bank.bankcore.account.domain.exception.AccountNotFoundException;
 import it.bank.bankcore.account.domain.exception.AccountStatusException;
+import it.bank.bankcore.account.domain.model.Account;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.payment.application.command.WithdrawCommand;
 import it.bank.bankcore.payment.domain.exception.CurrencyAccountException;
@@ -19,6 +20,10 @@ public class WithdrawValidationRule implements ValidationRule<WithdrawCommand> {
 
     @Override
     public void validate(WithdrawCommand input) {
+        loadAndValidate(input);
+    }
+
+    public Account loadAndValidate(WithdrawCommand input) {
         var targetAccount = accountRepository.findByUuidForUpdate(input.accountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(input.accountUuid()));
 
@@ -30,6 +35,7 @@ public class WithdrawValidationRule implements ValidationRule<WithdrawCommand> {
             throw new CurrencyAccountException(targetAccount.getCurrency(), input.currency());
         }
 
+        return targetAccount;
     }
 
 }

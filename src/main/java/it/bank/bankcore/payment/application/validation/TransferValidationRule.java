@@ -20,6 +20,10 @@ public class TransferValidationRule implements ValidationRule<TransferCommand> {
 
     @Override
     public void validate(TransferCommand input) {
+        loadAndValidate(input);
+    }
+
+    public TransferValidationResult loadAndValidate(TransferCommand input) {
         var sourceAccount = accountRepository.findByUuidForUpdate(input.sourceAccountUuid())
                 .orElseThrow(() -> new AccountNotFoundException(input.sourceAccountUuid()));
         var targetAccount = accountRepository.findByUuidForUpdate(input.targetAccountUuid())
@@ -47,6 +51,7 @@ public class TransferValidationRule implements ValidationRule<TransferCommand> {
             throw new SameAccountTransferException(sourceAccount.getUuid());
         }
 
+        return new TransferValidationResult(sourceAccount, targetAccount);
     }
 
 }

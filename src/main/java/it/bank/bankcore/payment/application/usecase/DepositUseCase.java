@@ -1,6 +1,5 @@
 package it.bank.bankcore.payment.application.usecase;
 
-import it.bank.bankcore.account.domain.exception.AccountNotFoundException;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.ledger.application.command.RecordDepositLedgerCommand;
 import it.bank.bankcore.ledger.application.port.LedgerRecorder;
@@ -31,10 +30,7 @@ public class DepositUseCase implements UseCase<DepositCommand, DepositResult> {
 
     @Override
     public DepositResult execute(DepositCommand command) {
-        depositValidationRule.validate(command);
-
-        var targetAccount = accountRepository.findByUuidForUpdate(command.accountUuid())
-                .orElseThrow(() -> new AccountNotFoundException(command.accountUuid()));
+        var targetAccount = depositValidationRule.loadAndValidate(command);
 
         var payment = paymentDomainMapper.toDomain(command);
         payment.complete();

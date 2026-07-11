@@ -22,7 +22,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -63,7 +62,7 @@ class DepositUseCaseTest {
         var savedPayment = samplePayment("payment-1", PaymentStatus.COMPLETED);
         var expected = new DepositResult("payment-1", new BigDecimal("25.00"), "EUR");
 
-        when(accountRepository.findByUuidForUpdate("acc-uuid")).thenReturn(Optional.of(targetAccount));
+        when(depositValidationRule.loadAndValidate(command)).thenReturn(targetAccount);
         when(paymentDomainMapper.toDomain(command)).thenReturn(pendingPayment);
         when(paymentRepository.save(pendingPayment)).thenReturn(savedPayment);
         when(paymentApplicationMapper.toDepositResult(savedPayment)).thenReturn(expected);
@@ -86,7 +85,7 @@ class DepositUseCaseTest {
     @Test
     void execute_shouldThrowWhenAccountNotFound() {
         var command = new DepositCommand("missing-uuid", new BigDecimal("10.00"), "EUR", "req-deposit-2");
-        when(accountRepository.findByUuidForUpdate("missing-uuid")).thenReturn(Optional.empty());
+        when(depositValidationRule.loadAndValidate(command)).thenThrow(new AccountNotFoundException("missing-uuid"));
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
 

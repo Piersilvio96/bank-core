@@ -1,6 +1,5 @@
 package it.bank.bankcore.payment.application.usecase;
 
-import it.bank.bankcore.account.domain.exception.AccountNotFoundException;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.ledger.application.command.RecordTransferLedgerCommand;
 import it.bank.bankcore.ledger.application.port.LedgerRecorder;
@@ -29,12 +28,9 @@ public class TransferUseCase implements UseCase<TransferCommand, TransferResult>
 
     @Override
     public TransferResult execute(TransferCommand command) {
-        transferValidationRule.validate(command);
-        var sourceAccount = accountRepository.findByUuidForUpdate(command.sourceAccountUuid())
-                .orElseThrow(() -> new AccountNotFoundException(command.sourceAccountUuid()));
-
-        var targetAccount = accountRepository.findByUuidForUpdate(command.targetAccountUuid())
-                .orElseThrow(() -> new AccountNotFoundException(command.targetAccountUuid()));
+        var validationResult = transferValidationRule.loadAndValidate(command);
+        var sourceAccount = validationResult.sourceAccount();
+        var targetAccount = validationResult.targetAccount();
 
         var payment = paymentDomainMapper.toDomain(command);
         payment.complete();
