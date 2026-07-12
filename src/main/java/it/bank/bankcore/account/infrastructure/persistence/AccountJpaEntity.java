@@ -38,7 +38,7 @@ public class AccountJpaEntity extends BaseEntity {
     private String country;
     @Column(columnDefinition = "DECIMAL(19,2)")
     private BigDecimal balance;
-    @Column(columnDefinition = "CHAR(3)", nullable = false)
+    @Column(columnDefinition = "VARCHAR(3)", nullable = false)
     private String currency;
     @Enumerated(EnumType.STRING)
     private AccountStatus status;

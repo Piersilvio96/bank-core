@@ -249,6 +249,74 @@ class ApiMockMvcPostgresIntegrationTest {
     }
 
     @Test
+    void shouldReverseDepositViaHttpApiAndKeepIdempotency() throws Exception {
+        var uuid = createAccount("mockmvc-reverse");
+        var depositRequestCode = UUID.randomUUID().toString();
+
+        var depositResponse = mockMvc.perform(post("/api/v1/payments/deposit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "accountUuid": "%s",
+                                  "amount": 40.00,
+                                  "currency": "EUR",
+                                  "requestCode": "%s"
+                                }
+                                """.formatted(uuid, depositRequestCode)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String depositPaymentId = JsonPath.read(depositResponse, "$.paymentId");
+        var reverseRequestCode = UUID.randomUUID().toString();
+
+        var firstReverseResponse = mockMvc.perform(post("/api/v1/payments/reverse")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "paymentId": "%s",
+                                  "reason": "wrong booking",
+                                  "requestCode": "%s"
+                                }
+                                """.formatted(depositPaymentId, reverseRequestCode)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.paymentId").isNotEmpty())
+                .andExpect(jsonPath("$.reversedPaymentId").value(depositPaymentId))
+                .andExpect(jsonPath("$.amount").value(40.00))
+                .andExpect(jsonPath("$.currency").value("EUR"))
+                .andExpect(jsonPath("$.created").value(true))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        var secondReverseResponse = mockMvc.perform(post("/api/v1/payments/reverse")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "paymentId": "%s",
+                                  "reason": "wrong booking",
+                                  "requestCode": "%s"
+                                }
+                                """.formatted(depositPaymentId, reverseRequestCode)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reversedPaymentId").value(depositPaymentId))
+                .andExpect(jsonPath("$.created").value(false))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String firstReversePaymentId = JsonPath.read(firstReverseResponse, "$.paymentId");
+        String secondReversePaymentId = JsonPath.read(secondReverseResponse, "$.paymentId");
+        org.junit.jupiter.api.Assertions.assertEquals(firstReversePaymentId, secondReversePaymentId);
+
+        mockMvc.perform(get("/api/v1/accounts/{uuid}/balance", uuid))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.balance").value(0.00))
+                .andExpect(jsonPath("$.currency").value("EUR"));
+    }
+
+    @Test
     void shouldReturnConflictWhenAccountAlreadyExists() throws Exception {
         String payload = """
                 {

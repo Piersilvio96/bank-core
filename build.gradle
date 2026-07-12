@@ -1,7 +1,17 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.flywaydb:flyway-database-postgresql:12.11.0"
+    }
+}
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version '4.1.0'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.flywaydb.flyway' version '12.11.0'
 }
 
 group = 'it.bank'
@@ -22,6 +32,14 @@ ext {
     set('snippetsDir', file("build/generated-snippets"))
     set('testcontainersVersion', '1.20.1')
 }
+
+flyway {
+    url = 'jdbc:postgresql://localhost:5432/bankcore'
+    user = 'bankcore'
+    password = 'password'
+    locations = ['classpath:db/migration']
+}
+
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

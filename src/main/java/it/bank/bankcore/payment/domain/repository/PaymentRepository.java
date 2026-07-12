@@ -8,6 +8,10 @@ public interface PaymentRepository {
 
     Payment save(Payment payment);
 
+    Payment updateReversedPayment(Payment payment);
+
     Optional<Payment> findByRequestCode(String requestCode);
+
+    Optional<Payment> findByPaymentId(String paymentId);
 }
 

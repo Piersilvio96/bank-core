@@ -12,7 +12,7 @@ CREATE TABLE accounts (
     state VARCHAR(255) NOT NULL,
     country VARCHAR(255) NOT NULL,
     balance DECIMAL(19,2),
-    currency CHAR(3) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
     status VARCHAR(255)
 );
 
@@ -26,7 +26,7 @@ CREATE TABLE payments (
     amount DECIMAL(19,2),
     reason TEXT,
     status VARCHAR(255) NOT NULL,
-    currency VARCHAR(255) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
     request_code VARCHAR(255) UNIQUE NOT NULL,
     CONSTRAINT fk_payments_source_account FOREIGN KEY (source_account_id) REFERENCES accounts(id),
     CONSTRAINT fk_payments_target_account FOREIGN KEY (target_account_id) REFERENCES accounts(id)
@@ -40,7 +40,7 @@ CREATE TABLE ledger_entries (
     account_id VARCHAR(255) NOT NULL,
     payment_id VARCHAR(255) NOT NULL,
     type VARCHAR(255) NOT NULL,
-    currency VARCHAR(255) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
     amount DECIMAL(19,2)
 );
 

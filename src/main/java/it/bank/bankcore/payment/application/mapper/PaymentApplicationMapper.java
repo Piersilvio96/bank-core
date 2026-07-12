@@ -1,6 +1,7 @@
 package it.bank.bankcore.payment.application.mapper;
 
 import it.bank.bankcore.payment.application.result.DepositResult;
+import it.bank.bankcore.payment.application.result.ReversalResult;
 import it.bank.bankcore.payment.application.result.TransferResult;
 import it.bank.bankcore.payment.application.result.WithdrawResult;
 import it.bank.bankcore.payment.domain.model.Payment;
@@ -33,6 +34,16 @@ public class PaymentApplicationMapper {
     public TransferResult toTransferResult(Payment payment, boolean created) {
         return new TransferResult(
                 payment.getUuid(),
+                payment.getAmount(),
+                payment.getCurrency(),
+                created
+        );
+    }
+
+    public ReversalResult toReversalResult(Payment payment, boolean created) {
+        return new ReversalResult(
+                payment.getUuid(),
+                payment.getReversedPayment().getUuid(),
                 payment.getAmount(),
                 payment.getCurrency(),
                 created

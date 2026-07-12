@@ -4,7 +4,10 @@ import it.bank.bankcore.account.infrastructure.persistence.AccountJpaEntity;
 import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.shared.infrastructure.BaseEntity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
@@ -28,9 +31,12 @@ public class PaymentJpaEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus status;
-    @Column(nullable = false)
+    @Column(columnDefinition = "VARCHAR(3)", nullable = false)
     private String currency;
     @Column(unique = true, nullable = false)
     private String requestCode;
-
+    @OneToOne(fetch = FetchType.EAGER)
+    private PaymentJpaEntity reversedPayment;
+    @OneToOne(fetch = FetchType.EAGER)
+    private PaymentJpaEntity reversalPayment;
 }

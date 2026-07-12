@@ -5,6 +5,8 @@ import it.bank.bankcore.ledger.domain.repository.LedgerEntryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 @RequiredArgsConstructor
 public class LedgerEntryRepositoryImpl implements LedgerEntryRepository {
@@ -19,4 +21,25 @@ public class LedgerEntryRepositoryImpl implements LedgerEntryRepository {
         ledgerEntryJpaRepository.save(ledgerEntryJpa);
         return ledgerEntryJpaMapper.toDomain(ledgerEntryJpaRepository.save(ledgerEntryJpa));
     }
+
+    @Override
+    public List<LedgerEntry> findByPaymentId(String paymentId) {
+        var ledgerEntries = ledgerEntryJpaRepository.findByPaymentId(paymentId);
+        return ledgerEntries.stream()
+                .map(ledgerEntryJpaMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<LedgerEntry> saveAll(List<LedgerEntry> entries) {
+        var ledgerEntryJpas = entries.stream()
+                .map(ledgerEntryJpaMapper::toEntity)
+                .toList();
+        ledgerEntryJpaRepository.saveAll(ledgerEntryJpas);
+        return ledgerEntryJpas.stream()
+                .map(ledgerEntryJpaMapper::toDomain)
+                .toList();
+    }
+
+
 }

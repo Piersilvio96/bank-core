@@ -22,10 +22,17 @@ public class Payment extends Base {
     private PaymentStatus status;
     private String currency;
     private String requestCode;
+    private Payment reversedPayment;
+    private Payment reversalPayment;
 
     public void complete() {
         this.status = PaymentStatus.COMPLETED;
     }
 
-}
+    public void revert(Payment paymentToBeReverted) {
+        this.reversedPayment = paymentToBeReverted;
+        paymentToBeReverted.reversalPayment = this;
+        paymentToBeReverted.status = PaymentStatus.REVERSED;
+    }
 
+}

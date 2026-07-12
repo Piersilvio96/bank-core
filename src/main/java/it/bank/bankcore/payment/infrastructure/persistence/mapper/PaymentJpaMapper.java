@@ -17,6 +17,22 @@ public class PaymentJpaMapper implements JpaMapper<Payment, PaymentJpaEntity> {
 
     @Override
     public Payment toDomain(PaymentJpaEntity entity) {
+        Payment reversedPayment = null;
+        if (entity.getReversedPayment() != null) {
+            reversedPayment = Payment.builder()
+                    .id(entity.getReversedPayment().getId())
+                    .uuid(entity.getReversedPayment().getUuid())
+                    .build();
+        }
+
+        Payment reversalPayment = null;
+        if (entity.getReversalPayment() != null) {
+            reversalPayment = Payment.builder()
+                    .id(entity.getReversalPayment().getId())
+                    .uuid(entity.getReversalPayment().getUuid())
+                    .build();
+        }
+
         return Payment.builder()
                 .id(entity.getId())
                 .uuid(entity.getUuid())
@@ -27,6 +43,8 @@ public class PaymentJpaMapper implements JpaMapper<Payment, PaymentJpaEntity> {
                 .status(entity.getStatus())
                 .currency(entity.getCurrency())
                 .requestCode(entity.getRequestCode())
+                .reversedPayment(reversedPayment)
+                .reversalPayment(reversalPayment)
                 .build();
     }
 
@@ -55,4 +73,3 @@ public class PaymentJpaMapper implements JpaMapper<Payment, PaymentJpaEntity> {
                 .build();
     }
 }
-

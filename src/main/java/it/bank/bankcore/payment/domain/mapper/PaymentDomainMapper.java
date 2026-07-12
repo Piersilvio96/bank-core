@@ -1,9 +1,11 @@
 package it.bank.bankcore.payment.domain.mapper;
 
 import it.bank.bankcore.payment.application.command.DepositCommand;
+import it.bank.bankcore.payment.application.command.ReversalCommand;
 import it.bank.bankcore.payment.application.command.TransferCommand;
 import it.bank.bankcore.payment.application.command.WithdrawCommand;
 import it.bank.bankcore.payment.domain.mapper.cases.DepositDomainMapper;
+import it.bank.bankcore.payment.domain.mapper.cases.ReversalDomainMapper;
 import it.bank.bankcore.payment.domain.mapper.cases.TransferDomainMapper;
 import it.bank.bankcore.payment.domain.mapper.cases.WithdrawDomainMapper;
 import it.bank.bankcore.payment.domain.model.Payment;
@@ -17,6 +19,7 @@ public class PaymentDomainMapper {
     private final DepositDomainMapper depositDomainMapper;
     private final TransferDomainMapper transferDomainMapper;
     private final WithdrawDomainMapper withdrawDomainMapper;
+    private final ReversalDomainMapper reversalDomainMapper;
 
     public Payment toDomain(DepositCommand command) {
         return depositDomainMapper.toDomain(command);
@@ -30,5 +33,8 @@ public class PaymentDomainMapper {
         return withdrawDomainMapper.toDomain(command);
     }
 
+    public Payment toDomain(ReversalCommand command, Payment payment) {
+        return reversalDomainMapper.toDomain(command, payment);
+    }
 }
 
