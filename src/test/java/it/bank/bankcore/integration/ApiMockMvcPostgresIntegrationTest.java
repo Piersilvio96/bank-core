@@ -322,6 +322,71 @@ class ApiMockMvcPostgresIntegrationTest {
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Account not found")));
     }
 
+    @Test
+    void shouldReturnInternalServerErrorWhenGetAccountUsesMissingUuid() throws Exception {
+        var missingUuid = UUID.randomUUID().toString();
+
+        mockMvc.perform(get("/api/v1/accounts/{uuid}", missingUuid))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Account not found")));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenWithdrawAmountExceedsBalance() throws Exception {
+        var uuid = createAccount("mockmvc-insufficient-funds");
+
+        mockMvc.perform(post("/api/v1/payments/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "accountUuid": "%s",
+                                  "amount": 10.00,
+                                  "currency": "EUR",
+                                  "requestCode": "%s"
+                                }
+                                """.formatted(uuid, UUID.randomUUID())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Insufficient funds"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenTransferUsesSameSourceAndTargetAccount() throws Exception {
+        var uuid = createAccount("mockmvc-same-account-transfer");
+
+        mockMvc.perform(post("/api/v1/payments/transfer")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "sourceAccountUuid": "%s",
+                                  "targetAccountUuid": "%s",
+                                  "amount": 10.00,
+                                  "currency": "EUR",
+                                  "reason": "same-account-check",
+                                  "requestCode": "%s"
+                                }
+                                """.formatted(uuid, uuid, UUID.randomUUID())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Source and target accounts must be different")));
+    }
+
+    @Test
+    void shouldReturnConflictWhenDepositCurrencyDiffersFromAccountCurrency() throws Exception {
+        var uuid = createAccount("mockmvc-currency-mismatch");
+
+        mockMvc.perform(post("/api/v1/payments/deposit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "accountUuid": "%s",
+                                  "amount": 20.00,
+                                  "currency": "USD",
+                                  "requestCode": "%s"
+                                }
+                                """.formatted(uuid, UUID.randomUUID())))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Currency mismatch")));
+    }
+
     private String createAccount(String userPrefix) throws Exception {
         var suffix = UUID.randomUUID().toString().substring(0, 8);
 
@@ -349,4 +414,3 @@ class ApiMockMvcPostgresIntegrationTest {
         return JsonPath.read(response, "$.uuid");
     }
 }
-
