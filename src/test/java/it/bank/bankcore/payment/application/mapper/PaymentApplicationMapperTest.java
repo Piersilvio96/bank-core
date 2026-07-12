@@ -16,33 +16,36 @@ class PaymentApplicationMapperTest {
     void toDepositResult_shouldMapPaymentFields() {
         var payment = samplePayment();
 
-        var result = mapper.toDepositResult(payment);
+        var result = mapper.toDepositResult(payment, true);
 
         assertEquals(payment.getUuid(), result.paymentId());
         assertEquals(0, payment.getAmount().compareTo(result.amount()));
         assertEquals(payment.getCurrency(), result.currency());
+        assertEquals(true, result.created());
     }
 
     @Test
     void toWithdrawResult_shouldMapPaymentFields() {
         var payment = samplePayment();
 
-        var result = mapper.toWithdrawResult(payment);
+        var result = mapper.toWithdrawResult(payment, false);
 
         assertEquals(payment.getUuid(), result.paymentId());
         assertEquals(0, payment.getAmount().compareTo(result.amount()));
         assertEquals(payment.getCurrency(), result.currency());
+        assertEquals(false, result.created());
     }
 
     @Test
     void toTransferResult_shouldMapPaymentFields() {
         var payment = samplePayment();
 
-        var result = mapper.toTransferResult(payment);
+        var result = mapper.toTransferResult(payment, true);
 
         assertEquals(payment.getUuid(), result.paymentId());
         assertEquals(0, payment.getAmount().compareTo(result.amount()));
         assertEquals(payment.getCurrency(), result.currency());
+        assertEquals(true, result.created());
     }
 
     private Payment samplePayment() {
@@ -57,4 +60,3 @@ class PaymentApplicationMapperTest {
                 .build();
     }
 }
-

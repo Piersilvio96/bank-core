@@ -15,6 +15,7 @@ import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
 import it.bank.bankcore.payment.domain.model.Payment;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
+import it.bank.bankcore.payment.infrastructure.exception.PaymentCodeAlreadyExists;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -23,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -62,12 +64,12 @@ class TransferUseCaseTest {
         var targetAccount = sampleAccount("target-uuid", new BigDecimal("20.00"));
         var pendingPayment = samplePayment("payment-1", PaymentStatus.PENDING, "rent");
         var savedPayment = samplePayment("payment-1", PaymentStatus.COMPLETED, "rent");
-        var expected = new TransferResult("payment-1", new BigDecimal("30.00"), "EUR");
+        var expected = new TransferResult("payment-1", new BigDecimal("30.00"), "EUR", true);
 
         when(transferValidationRule.loadAndValidate(command)).thenReturn(new TransferValidationResult(sourceAccount, targetAccount));
         when(paymentDomainMapper.toDomain(command)).thenReturn(pendingPayment);
         when(paymentRepository.save(pendingPayment)).thenReturn(savedPayment);
-        when(paymentApplicationMapper.toTransferResult(savedPayment)).thenReturn(expected);
+        when(paymentApplicationMapper.toTransferResult(savedPayment, true)).thenReturn(expected);
 
         var result = useCase.execute(command);
 
@@ -86,8 +88,50 @@ class TransferUseCaseTest {
     }
 
     @Test
+    void execute_shouldReturnExistingPaymentWhenRequestCodeAlreadyProcessed() {
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("30.00"), "EUR", "rent", "req-transfer-existing");
+        var existingPayment = samplePayment("payment-existing", PaymentStatus.COMPLETED, "rent");
+        var expected = new TransferResult("payment-existing", new BigDecimal("30.00"), "EUR", false);
+
+        when(paymentRepository.findByRequestCode(command.requestCode())).thenReturn(Optional.of(existingPayment));
+        when(paymentApplicationMapper.toTransferResult(existingPayment, false)).thenReturn(expected);
+
+        var result = useCase.execute(command);
+
+        assertEquals(expected, result);
+        verify(paymentRepository, never()).save(any());
+        verify(ledgerRecorder, never()).recordTransfer(any());
+        verify(accountRepository, never()).save(any());
+    }
+
+    @Test
+    void execute_shouldReturnExistingPaymentWhenConcurrentSaveDetectsDuplicateRequestCode() {
+        var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("30.00"), "EUR", "rent", "req-transfer-race");
+        var sourceAccount = sampleAccount("source-uuid", new BigDecimal("100.00"));
+        var targetAccount = sampleAccount("target-uuid", new BigDecimal("20.00"));
+        var pendingPayment = samplePayment("payment-race", PaymentStatus.PENDING, "rent");
+        var existingPayment = samplePayment("payment-existing", PaymentStatus.COMPLETED, "rent");
+        var expected = new TransferResult("payment-existing", new BigDecimal("30.00"), "EUR", false);
+
+        when(paymentRepository.findByRequestCode(command.requestCode()))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(existingPayment));
+        when(transferValidationRule.loadAndValidate(command)).thenReturn(new TransferValidationResult(sourceAccount, targetAccount));
+        when(paymentDomainMapper.toDomain(command)).thenReturn(pendingPayment);
+        when(paymentRepository.save(pendingPayment))
+                .thenThrow(new PaymentCodeAlreadyExists("Payment with request code " + command.requestCode() + " already exists"));
+        when(paymentApplicationMapper.toTransferResult(existingPayment, false)).thenReturn(expected);
+
+        var result = useCase.execute(command);
+
+        assertEquals(expected, result);
+        verify(ledgerRecorder, never()).recordTransfer(any());
+    }
+
+    @Test
     void execute_shouldThrowWhenSourceAccountMissing() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-2");
+        when(paymentRepository.findByRequestCode(command.requestCode())).thenReturn(Optional.empty());
         when(transferValidationRule.loadAndValidate(command)).thenThrow(new AccountNotFoundException("source-uuid"));
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
@@ -99,6 +143,7 @@ class TransferUseCaseTest {
     @Test
     void execute_shouldThrowWhenTargetAccountMissing() {
         var command = new TransferCommand("source-uuid", "target-uuid", new BigDecimal("10.00"), "EUR", "rent", "req-transfer-3");
+        when(paymentRepository.findByRequestCode(command.requestCode())).thenReturn(Optional.empty());
         when(transferValidationRule.loadAndValidate(command)).thenThrow(new AccountNotFoundException("target-uuid"));
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
@@ -136,4 +181,3 @@ class TransferUseCaseTest {
                 .build();
     }
 }
-

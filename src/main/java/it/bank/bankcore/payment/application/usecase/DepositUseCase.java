@@ -8,7 +8,9 @@ import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
 import it.bank.bankcore.payment.application.result.DepositResult;
 import it.bank.bankcore.payment.application.validation.DepositValidationRule;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
+import it.bank.bankcore.payment.domain.model.Payment;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
+import it.bank.bankcore.payment.infrastructure.exception.PaymentCodeAlreadyExists;
 import it.bank.bankcore.shared.application.UseCase;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +33,7 @@ public class DepositUseCase implements UseCase<DepositCommand, DepositResult> {
     @Override
     public DepositResult execute(DepositCommand command) {
         return paymentRepository.findByRequestCode(command.requestCode())
-                .map(paymentApplicationMapper::toDepositResult)
+                .map(payment -> paymentApplicationMapper.toDepositResult(payment, false))
                 .orElseGet(() -> processNewDeposit(command));
     }
 
@@ -40,7 +42,12 @@ public class DepositUseCase implements UseCase<DepositCommand, DepositResult> {
 
         var payment = paymentDomainMapper.toDomain(command);
         payment.complete();
-        var savedPayment = paymentRepository.save(payment);
+        final Payment savedPayment;
+        try {
+            savedPayment = paymentRepository.save(payment);
+        } catch (PaymentCodeAlreadyExists exception) {
+            return getIdempotentDeposit(command.requestCode());
+        }
 
         targetAccount.deposit(command.amount());
         accountRepository.save(targetAccount);
@@ -53,6 +60,12 @@ public class DepositUseCase implements UseCase<DepositCommand, DepositResult> {
                 DEPOSIT_REASON
         ));
 
-        return paymentApplicationMapper.toDepositResult(savedPayment);
+        return paymentApplicationMapper.toDepositResult(savedPayment, true);
+    }
+
+    private DepositResult getIdempotentDeposit(String requestCode) {
+        return paymentRepository.findByRequestCode(requestCode)
+                .map(payment -> paymentApplicationMapper.toDepositResult(payment, false))
+                .orElseThrow(() -> new PaymentCodeAlreadyExists("Payment with request code " + requestCode + " already exists"));
     }
 }

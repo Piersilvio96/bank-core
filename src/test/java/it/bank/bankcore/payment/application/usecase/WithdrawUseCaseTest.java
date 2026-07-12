@@ -14,6 +14,7 @@ import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
 import it.bank.bankcore.payment.domain.model.Payment;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
+import it.bank.bankcore.payment.infrastructure.exception.PaymentCodeAlreadyExists;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -22,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -60,12 +62,12 @@ class WithdrawUseCaseTest {
         var targetAccount = sampleAccount();
         var pendingPayment = samplePayment("payment-1", PaymentStatus.PENDING, "Withdraw");
         var savedPayment = samplePayment("payment-1", PaymentStatus.COMPLETED, "Withdraw");
-        var expected = new WithdrawResult("payment-1", new BigDecimal("25.00"), "EUR");
+        var expected = new WithdrawResult("payment-1", new BigDecimal("25.00"), "EUR", true);
 
         when(withdrawValidationRule.loadAndValidate(command)).thenReturn(targetAccount);
         when(paymentDomainMapper.toDomain(command)).thenReturn(pendingPayment);
         when(paymentRepository.save(pendingPayment)).thenReturn(savedPayment);
-        when(paymentApplicationMapper.toWithdrawResult(savedPayment)).thenReturn(expected);
+        when(paymentApplicationMapper.toWithdrawResult(savedPayment, true)).thenReturn(expected);
 
         var result = useCase.execute(command);
 
@@ -82,9 +84,51 @@ class WithdrawUseCaseTest {
     }
 
     @Test
+    void execute_shouldReturnExistingPaymentWhenRequestCodeAlreadyProcessed() {
+        var command = new WithdrawCommand("acc-uuid", new BigDecimal("25.00"), "EUR", "req-withdraw-existing");
+        var existingPayment = samplePayment("payment-existing", PaymentStatus.COMPLETED, "Withdraw");
+        var expected = new WithdrawResult("payment-existing", new BigDecimal("25.00"), "EUR", false);
+
+        when(paymentRepository.findByRequestCode(command.requestCode())).thenReturn(Optional.of(existingPayment));
+        when(paymentApplicationMapper.toWithdrawResult(existingPayment, false)).thenReturn(expected);
+
+        var result = useCase.execute(command);
+
+        assertEquals(expected, result);
+        verify(paymentRepository, never()).save(any());
+        verify(ledgerRecorder, never()).recordWithdraw(any());
+        verify(accountRepository, never()).save(any());
+    }
+
+    @Test
+    void execute_shouldReturnExistingPaymentWhenConcurrentSaveDetectsDuplicateRequestCode() {
+        var command = new WithdrawCommand("acc-uuid", new BigDecimal("25.00"), "EUR", "req-withdraw-race");
+        var targetAccount = sampleAccount();
+        var pendingPayment = samplePayment("payment-race", PaymentStatus.PENDING, "Withdraw");
+        var existingPayment = samplePayment("payment-existing", PaymentStatus.COMPLETED, "Withdraw");
+        var expected = new WithdrawResult("payment-existing", new BigDecimal("25.00"), "EUR", false);
+
+        when(paymentRepository.findByRequestCode(command.requestCode()))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(existingPayment));
+        when(withdrawValidationRule.loadAndValidate(command)).thenReturn(targetAccount);
+        when(paymentDomainMapper.toDomain(command)).thenReturn(pendingPayment);
+        when(paymentRepository.save(pendingPayment))
+                .thenThrow(new PaymentCodeAlreadyExists("Payment with request code " + command.requestCode() + " already exists"));
+        when(paymentApplicationMapper.toWithdrawResult(existingPayment, false)).thenReturn(expected);
+
+        var result = useCase.execute(command);
+
+        assertEquals(expected, result);
+        verify(ledgerRecorder, never()).recordWithdraw(any());
+        verify(accountRepository, never()).save(any());
+    }
+
+    @Test
     void execute_shouldThrowWhenAccountNotFound() {
         var command = new WithdrawCommand("missing-uuid", new BigDecimal("10.00"), "EUR", "req-withdraw-2");
         when(withdrawValidationRule.loadAndValidate(command)).thenThrow(new AccountNotFoundException("missing-uuid"));
+        when(paymentRepository.findByRequestCode(command.requestCode())).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> useCase.execute(command));
 
@@ -120,4 +164,3 @@ class WithdrawUseCaseTest {
                 .build();
     }
 }
-

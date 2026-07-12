@@ -20,7 +20,6 @@ public class DepositMapper implements
 
     @Override
     public DepositResponse toResponse(DepositResult result) {
-        return new DepositResponse(result.paymentId(), result.amount(), result.currency());
+        return new DepositResponse(result.paymentId(), result.amount(), result.currency(), result.created());
     }
 }
-

@@ -8,7 +8,9 @@ import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
 import it.bank.bankcore.payment.application.result.WithdrawResult;
 import it.bank.bankcore.payment.application.validation.WithdrawValidationRule;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
+import it.bank.bankcore.payment.domain.model.Payment;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
+import it.bank.bankcore.payment.infrastructure.exception.PaymentCodeAlreadyExists;
 import it.bank.bankcore.shared.application.UseCase;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +33,7 @@ public class WithdrawUseCase implements UseCase<WithdrawCommand, WithdrawResult>
     @Override
     public WithdrawResult execute(WithdrawCommand command) {
         return paymentRepository.findByRequestCode(command.requestCode())
-                .map(paymentApplicationMapper::toWithdrawResult)
+                .map(payment -> paymentApplicationMapper.toWithdrawResult(payment, false))
                 .orElseGet(() -> processNewWithdraw(command));
     }
 
@@ -40,7 +42,12 @@ public class WithdrawUseCase implements UseCase<WithdrawCommand, WithdrawResult>
 
         var payment = paymentDomainMapper.toDomain(command);
         payment.complete();
-        var savedPayment = paymentRepository.save(payment);
+        final Payment savedPayment;
+        try {
+            savedPayment = paymentRepository.save(payment);
+        } catch (PaymentCodeAlreadyExists exception) {
+            return getIdempotentWithdraw(command.requestCode());
+        }
 
         targetAccount.withdraw(command.amount());
         accountRepository.save(targetAccount);
@@ -53,6 +60,12 @@ public class WithdrawUseCase implements UseCase<WithdrawCommand, WithdrawResult>
                 WITHDRAW_REASON
         ));
 
-        return paymentApplicationMapper.toWithdrawResult(savedPayment);
+        return paymentApplicationMapper.toWithdrawResult(savedPayment, true);
+    }
+
+    private WithdrawResult getIdempotentWithdraw(String requestCode) {
+        return paymentRepository.findByRequestCode(requestCode)
+                .map(payment -> paymentApplicationMapper.toWithdrawResult(payment, false))
+                .orElseThrow(() -> new PaymentCodeAlreadyExists("Payment with request code " + requestCode + " already exists"));
     }
 }

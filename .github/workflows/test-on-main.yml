@@ -41,6 +41,11 @@ jobs:
       - name: Grant execute permission to Gradle wrapper
         run: chmod +x gradlew
 
+      - name: Verify Docker
+        run: |
+          docker version
+          docker info
+
       - name: Run tests
         run: ./gradlew test --no-daemon
 

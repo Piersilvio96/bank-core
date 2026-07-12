@@ -12,28 +12,30 @@ import org.springframework.stereotype.Component;
 public class PaymentApplicationMapper {
 
 
-    public DepositResult toDepositResult(Payment payment) {
+    public DepositResult toDepositResult(Payment payment, boolean created) {
         return new DepositResult(
                 payment.getUuid(),
                 payment.getAmount(),
-                payment.getCurrency()
+                payment.getCurrency(),
+                created
         );
     }
 
-    public WithdrawResult toWithdrawResult(Payment payment) {
+    public WithdrawResult toWithdrawResult(Payment payment, boolean created) {
         return new WithdrawResult(
                 payment.getUuid(),
                 payment.getAmount(),
-                payment.getCurrency()
+                payment.getCurrency(),
+                created
         );
     }
 
-    public TransferResult toTransferResult(Payment payment) {
+    public TransferResult toTransferResult(Payment payment, boolean created) {
         return new TransferResult(
                 payment.getUuid(),
                 payment.getAmount(),
-                payment.getCurrency()
+                payment.getCurrency(),
+                created
         );
     }
 }
-

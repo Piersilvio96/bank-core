@@ -8,7 +8,9 @@ import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
 import it.bank.bankcore.payment.application.result.TransferResult;
 import it.bank.bankcore.payment.application.validation.TransferValidationRule;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
+import it.bank.bankcore.payment.domain.model.Payment;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
+import it.bank.bankcore.payment.infrastructure.exception.PaymentCodeAlreadyExists;
 import it.bank.bankcore.shared.application.UseCase;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +32,7 @@ public class TransferUseCase implements UseCase<TransferCommand, TransferResult>
     public TransferResult execute(TransferCommand command) {
 
         return paymentRepository.findByRequestCode(command.requestCode())
-                .map(paymentApplicationMapper::toTransferResult)
+                .map(payment -> paymentApplicationMapper.toTransferResult(payment, false))
                 .orElseGet(() -> processNewTransfer(command));
     }
 
@@ -41,7 +43,12 @@ public class TransferUseCase implements UseCase<TransferCommand, TransferResult>
 
         var payment = paymentDomainMapper.toDomain(command);
         payment.complete();
-        var savedPayment = paymentRepository.save(payment);
+        final Payment savedPayment;
+        try {
+            savedPayment = paymentRepository.save(payment);
+        } catch (PaymentCodeAlreadyExists exception) {
+            return getIdempotentTransfer(command.requestCode());
+        }
 
         sourceAccount.withdraw(command.amount());
         accountRepository.save(sourceAccount);
@@ -58,7 +65,13 @@ public class TransferUseCase implements UseCase<TransferCommand, TransferResult>
                 savedPayment.getReason()
         ));
 
-        return paymentApplicationMapper.toTransferResult(savedPayment);
+        return paymentApplicationMapper.toTransferResult(savedPayment, true);
 
+    }
+
+    private TransferResult getIdempotentTransfer(String requestCode) {
+        return paymentRepository.findByRequestCode(requestCode)
+                .map(payment -> paymentApplicationMapper.toTransferResult(payment, false))
+                .orElseThrow(() -> new PaymentCodeAlreadyExists("Payment with request code " + requestCode + " already exists"));
     }
 }

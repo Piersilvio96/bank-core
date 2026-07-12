@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @SpringBootTest
 @Testcontainers(disabledWithoutDocker = true)
 @TestPropertySource(properties = {
-        "spring.jpa.hibernate.ddl-auto=create",
+        "spring.jpa.hibernate.ddl-auto=validate",
         "spring.jpa.show-sql=false",
         "spring.jpa.open-in-view=false"
 })

@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public record TransferResult(
         String paymentId,
         BigDecimal amount,
-        String currency
+        String currency,
+        boolean created
 ) {
 }
-

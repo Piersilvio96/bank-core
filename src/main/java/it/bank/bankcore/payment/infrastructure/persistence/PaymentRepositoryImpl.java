@@ -5,6 +5,7 @@ import it.bank.bankcore.payment.domain.repository.PaymentRepository;
 import it.bank.bankcore.payment.infrastructure.exception.PaymentCodeAlreadyExists;
 import it.bank.bankcore.payment.infrastructure.persistence.mapper.PaymentJpaMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -21,9 +22,13 @@ public class PaymentRepositoryImpl implements PaymentRepository {
         if (paymentJpaRepository.findByRequestCode(payment.getRequestCode()).isPresent()) {
             throw new PaymentCodeAlreadyExists("Payment with request code " + payment.getRequestCode() + " already exists");
         }
-        var paymentEntity = paymentJpaMapper.toEntity(payment);
-        var savedEntity = paymentJpaRepository.save(paymentEntity);
-        return paymentJpaMapper.toDomain(savedEntity);
+        try {
+            var paymentEntity = paymentJpaMapper.toEntity(payment);
+            var savedEntity = paymentJpaRepository.save(paymentEntity);
+            return paymentJpaMapper.toDomain(savedEntity);
+        } catch (DataIntegrityViolationException exception) {
+            throw new PaymentCodeAlreadyExists("Payment with request code " + payment.getRequestCode() + " already exists");
+        }
     }
 
     @Override
@@ -32,4 +37,3 @@ public class PaymentRepositoryImpl implements PaymentRepository {
                 .map(paymentJpaMapper::toDomain);
     }
 }
-

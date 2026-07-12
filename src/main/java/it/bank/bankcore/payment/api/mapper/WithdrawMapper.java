@@ -20,7 +20,6 @@ public class WithdrawMapper implements
 
     @Override
     public WithdrawResponse toResponse(WithdrawResult result) {
-        return new WithdrawResponse(result.paymentId(), result.amount(), result.currency());
+        return new WithdrawResponse(result.paymentId(), result.amount(), result.currency(), result.created());
     }
 }
-

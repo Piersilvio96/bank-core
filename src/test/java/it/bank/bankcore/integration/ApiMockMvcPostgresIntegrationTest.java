@@ -15,6 +15,12 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -25,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
 @TestPropertySource(properties = {
-        "spring.jpa.hibernate.ddl-auto=create",
+        "spring.jpa.hibernate.ddl-auto=validate",
         "spring.jpa.show-sql=false",
         "spring.jpa.open-in-view=false"
 })
@@ -85,10 +91,11 @@ class ApiMockMvcPostgresIntegrationTest {
                                   "requestCode": "%s"
                                 }
                                 """.formatted(uuid, UUID.randomUUID())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.paymentId").isNotEmpty())
                 .andExpect(jsonPath("$.amount").value(40.00))
-                .andExpect(jsonPath("$.currency").value("EUR"));
+                .andExpect(jsonPath("$.currency").value("EUR"))
+                .andExpect(jsonPath("$.created").value(true));
 
         mockMvc.perform(post("/api/v1/payments/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -100,10 +107,11 @@ class ApiMockMvcPostgresIntegrationTest {
                                   "requestCode": "%s"
                                 }
                                 """.formatted(uuid, UUID.randomUUID())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.paymentId").isNotEmpty())
                 .andExpect(jsonPath("$.amount").value(15.00))
-                .andExpect(jsonPath("$.currency").value("EUR"));
+                .andExpect(jsonPath("$.currency").value("EUR"))
+                .andExpect(jsonPath("$.created").value(true));
 
         mockMvc.perform(get("/api/v1/accounts/{uuid}/balance", uuid))
                 .andExpect(status().isOk())
@@ -126,7 +134,8 @@ class ApiMockMvcPostgresIntegrationTest {
                                   "requestCode": "%s"
                                 }
                                 """.formatted(uuid, requestCode)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.created").value(true))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -142,6 +151,7 @@ class ApiMockMvcPostgresIntegrationTest {
                                 }
                                 """.formatted(uuid, requestCode)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.created").value(false))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -209,7 +219,7 @@ class ApiMockMvcPostgresIntegrationTest {
                                   "requestCode": "%s"
                                 }
                                 """.formatted(sourceUuid, UUID.randomUUID())))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/payments/transfer")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -223,10 +233,11 @@ class ApiMockMvcPostgresIntegrationTest {
                                   "requestCode": "%s"
                                 }
                                 """.formatted(sourceUuid, targetUuid, UUID.randomUUID())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.paymentId").isNotEmpty())
                 .andExpect(jsonPath("$.amount").value(35.00))
-                .andExpect(jsonPath("$.currency").value("EUR"));
+                .andExpect(jsonPath("$.currency").value("EUR"))
+                .andExpect(jsonPath("$.created").value(true));
 
         mockMvc.perform(get("/api/v1/accounts/{uuid}/balance", sourceUuid))
                 .andExpect(status().isOk())
@@ -385,6 +396,62 @@ class ApiMockMvcPostgresIntegrationTest {
                                 """.formatted(uuid, UUID.randomUUID())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Currency mismatch")));
+    }
+
+    @Test
+    void shouldHandleConcurrentDepositRequestsWithSameRequestCode() throws Exception {
+        var uuid = createAccount("mockmvc-concurrent-idempotency");
+        var requestCode = UUID.randomUUID().toString();
+        var payload = """
+                {
+                  "accountUuid": "%s",
+                  "amount": 30.00,
+                  "currency": "EUR",
+                  "requestCode": "%s"
+                }
+                """.formatted(uuid, requestCode);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+
+        try {
+            Callable<String> task = () -> {
+                ready.countDown();
+                if (!start.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Failed to synchronize concurrent deposit start");
+                }
+                return mockMvc.perform(post("/api/v1/payments/deposit")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(payload))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+            };
+
+            Future<String> firstFuture = executorService.submit(task);
+            Future<String> secondFuture = executorService.submit(task);
+
+            org.junit.jupiter.api.Assertions.assertTrue(ready.await(5, TimeUnit.SECONDS));
+            start.countDown();
+
+            var firstResponse = firstFuture.get(10, TimeUnit.SECONDS);
+            var secondResponse = secondFuture.get(10, TimeUnit.SECONDS);
+
+            String firstPaymentId = JsonPath.read(firstResponse, "$.paymentId");
+            String secondPaymentId = JsonPath.read(secondResponse, "$.paymentId");
+            Boolean firstCreated = JsonPath.read(firstResponse, "$.created");
+            Boolean secondCreated = JsonPath.read(secondResponse, "$.created");
+
+            org.junit.jupiter.api.Assertions.assertEquals(firstPaymentId, secondPaymentId);
+            org.junit.jupiter.api.Assertions.assertTrue(Boolean.TRUE.equals(firstCreated) ^ Boolean.TRUE.equals(secondCreated));
+        } finally {
+            executorService.shutdownNow();
+        }
+
+        mockMvc.perform(get("/api/v1/accounts/{uuid}/balance", uuid))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.balance").value(30.00));
     }
 
     private String createAccount(String userPrefix) throws Exception {

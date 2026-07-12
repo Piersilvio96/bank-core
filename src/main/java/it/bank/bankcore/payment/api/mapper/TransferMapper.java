@@ -20,7 +20,6 @@ public class TransferMapper implements
 
     @Override
     public TransferResponse toResponse(TransferResult result) {
-        return new TransferResponse(result.paymentId(), result.amount(), result.currency());
+        return new TransferResponse(result.paymentId(), result.amount(), result.currency(), result.created());
     }
 }
-
