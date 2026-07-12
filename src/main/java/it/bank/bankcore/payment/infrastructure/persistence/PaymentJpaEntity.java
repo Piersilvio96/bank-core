@@ -26,9 +26,11 @@ public class PaymentJpaEntity extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String reason;
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PaymentStatus status;
+    @Column(nullable = false)
     private String currency;
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String requestCode;
 
 }

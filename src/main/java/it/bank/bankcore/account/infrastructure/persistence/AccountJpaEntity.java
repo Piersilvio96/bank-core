@@ -20,17 +20,25 @@ import java.util.Objects;
 @AllArgsConstructor
 @SuperBuilder
 public class AccountJpaEntity extends BaseEntity {
+    @Column(nullable = false)
     private String firstName;
+    @Column(nullable = false)
     private String lastName;
+    @Column(nullable = false)
     private String email;
+    @Column(nullable = false)
     private String fiscalCode;
+    @Column(nullable = false)
     private String phoneNumber;
+    @Column(nullable = false)
     private String city;
+    @Column(nullable = false)
     private String state;
+    @Column(nullable = false)
     private String country;
     @Column(columnDefinition = "DECIMAL(19,2)")
     private BigDecimal balance;
-    @Column(columnDefinition = "CHAR(3)")
+    @Column(columnDefinition = "CHAR(3)", nullable = false)
     private String currency;
     @Enumerated(EnumType.STRING)
     private AccountStatus status;

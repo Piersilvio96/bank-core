@@ -1,6 +1,6 @@
 CREATE TABLE accounts (
     id BIGSERIAL PRIMARY KEY,
-    uuid VARCHAR(255) UNIQUE NOT NULL,
+    uuid VARCHAR(255) UNIQUE,
     created_at BIGINT,
     updated_at BIGINT,
     first_name VARCHAR(255) NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE accounts (
 
 CREATE TABLE payments (
     id BIGSERIAL PRIMARY KEY,
-    uuid VARCHAR(255) UNIQUE NOT NULL,
+    uuid VARCHAR(255) UNIQUE,
     created_at BIGINT,
     updated_at BIGINT,
     source_account_id BIGINT,
@@ -34,7 +34,7 @@ CREATE TABLE payments (
 
 CREATE TABLE ledger_entries (
     id BIGSERIAL PRIMARY KEY,
-    uuid VARCHAR(255) UNIQUE NOT NULL,
+    uuid VARCHAR(255) UNIQUE,
     created_at BIGINT,
     updated_at BIGINT,
     account_id VARCHAR(255) NOT NULL,
