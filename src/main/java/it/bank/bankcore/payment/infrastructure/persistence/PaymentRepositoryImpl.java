@@ -1,5 +1,6 @@
 package it.bank.bankcore.payment.infrastructure.persistence;
 
+import org.hibernate.exception.ConstraintViolationException;
 import it.bank.bankcore.payment.domain.exception.PaymentNotFoundException;
 import it.bank.bankcore.payment.domain.model.Payment;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
@@ -8,7 +9,6 @@ import it.bank.bankcore.payment.infrastructure.persistence.mapper.PaymentJpaMapp
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
-
 import java.util.Optional;
 
 @Repository
@@ -25,11 +25,25 @@ public class PaymentRepositoryImpl implements PaymentRepository {
         }
         try {
             var paymentEntity = paymentJpaMapper.toEntity(payment);
-            var savedEntity = paymentJpaRepository.save(paymentEntity);
+            var savedEntity = paymentJpaRepository.saveAndFlush(paymentEntity);
             return paymentJpaMapper.toDomain(savedEntity);
         } catch (DataIntegrityViolationException exception) {
-            throw new PaymentCodeAlreadyExists("Payment with request code " + payment.getRequestCode() + " already exists");
+            if (isRequestCodeViolation(exception)) {
+                throw new PaymentCodeAlreadyExists("Payment with request code " + payment.getRequestCode() + " already exists", exception);
+            }
+            throw exception;
         }
+    }
+
+    private boolean isRequestCodeViolation(Throwable exception) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            if (cause instanceof ConstraintViolationException violation
+                    && "23505".equals(violation.getSQLState())
+                    && "payments_request_code_key".equalsIgnoreCase(violation.getConstraintName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

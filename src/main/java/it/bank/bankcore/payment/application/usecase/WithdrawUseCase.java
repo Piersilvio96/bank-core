@@ -8,23 +8,23 @@ import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
 import it.bank.bankcore.payment.application.result.WithdrawResult;
 import it.bank.bankcore.payment.application.validation.WithdrawValidationRule;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
-import it.bank.bankcore.payment.domain.model.Payment;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
 import it.bank.bankcore.payment.infrastructure.exception.PaymentCodeAlreadyExists;
 import it.bank.bankcore.shared.application.UseCase;
-import jakarta.transaction.Transactional;
+import it.bank.bankcore.payment.application.service.PaymentExecution;
+import it.bank.bankcore.payment.application.validation.PaymentRequestMatcher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class WithdrawUseCase implements UseCase<WithdrawCommand, WithdrawResult> {
 
     private static final String WITHDRAW_REASON = "Withdraw";
 
     private final LedgerRecorder ledgerRecorder;
     private final WithdrawValidationRule withdrawValidationRule;
+    private final PaymentExecution paymentExecution;
     private final AccountRepository accountRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentDomainMapper paymentDomainMapper;
@@ -32,9 +32,11 @@ public class WithdrawUseCase implements UseCase<WithdrawCommand, WithdrawResult>
 
     @Override
     public WithdrawResult execute(WithdrawCommand command) {
-        return paymentRepository.findByRequestCode(command.requestCode())
-                .map(payment -> paymentApplicationMapper.toWithdrawResult(payment, false))
-                .orElseGet(() -> processNewWithdraw(command));
+        return paymentExecution.execute(
+                () -> paymentRepository.findByRequestCode(command.requestCode())
+                        .map(payment -> paymentApplicationMapper.toWithdrawResult(PaymentRequestMatcher.match(payment, command), false))
+                        .orElseGet(() -> processNewWithdraw(command)),
+                () -> getIdempotentWithdraw(command));
     }
 
     private WithdrawResult processNewWithdraw(WithdrawCommand command) {
@@ -42,12 +44,7 @@ public class WithdrawUseCase implements UseCase<WithdrawCommand, WithdrawResult>
 
         var payment = paymentDomainMapper.toDomain(command);
         payment.complete();
-        final Payment savedPayment;
-        try {
-            savedPayment = paymentRepository.save(payment);
-        } catch (PaymentCodeAlreadyExists exception) {
-            return getIdempotentWithdraw(command.requestCode());
-        }
+        var savedPayment = paymentRepository.save(payment);
 
         targetAccount.withdraw(command.amount());
         accountRepository.save(targetAccount);
@@ -63,9 +60,9 @@ public class WithdrawUseCase implements UseCase<WithdrawCommand, WithdrawResult>
         return paymentApplicationMapper.toWithdrawResult(savedPayment, true);
     }
 
-    private WithdrawResult getIdempotentWithdraw(String requestCode) {
-        return paymentRepository.findByRequestCode(requestCode)
-                .map(payment -> paymentApplicationMapper.toWithdrawResult(payment, false))
-                .orElseThrow(() -> new PaymentCodeAlreadyExists("Payment with request code " + requestCode + " already exists"));
+    private WithdrawResult getIdempotentWithdraw(WithdrawCommand command) {
+        return paymentRepository.findByRequestCode(command.requestCode())
+                .map(payment -> paymentApplicationMapper.toWithdrawResult(PaymentRequestMatcher.match(payment, command), false))
+                .orElseThrow(() -> new PaymentCodeAlreadyExists("Payment with request code " + command.requestCode() + " already exists"));
     }
 }

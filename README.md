@@ -13,7 +13,8 @@ BankCore is the backend core of a modular banking platform built with a clean ar
   - withdraw,
   - transfer.
 - Ledger entries for each payment operation.
-- Request code propagation in payment commands/requests.
+- Full payment reversals with original-payment locking.
+- Idempotency by request code, with conflicts for different payment data.
 - Global API error handling (`400`, `409`, `500` depending on exception type).
 
 ## Tech Stack
@@ -103,6 +104,8 @@ spring.flyway.locations: classpath:db/migration
   - `accounts`,
   - `payments`,
   - `ledger_entries`.
+- `V2__add_reversal_columns.sql` links original and reversal payments.
+- `V3__add_payment_type.sql` stores payment types and backfills existing payments.
 
 ## Requirements
 
@@ -159,6 +162,14 @@ Create account payload example:
 - `POST /api/v1/payments/deposit`
 - `POST /api/v1/payments/withdraw`
 - `POST /api/v1/payments/transfer`
+- `POST /api/v1/payments/reverse`
+
+New payments return `201`; identical retries return `200`. Reusing a request code
+with different operation data returns `409` with code `REQUEST_CODE_CONFLICT`.
+Payment type, accounts, amount, currency, and applicable reason are compared;
+reversals also compare the original payment ID. Duplicate insert recovery rolls
+back the failed transaction before reading the existing payment in a new one.
+Each payment use case owns its transaction, independently of any caller transaction.
 
 Deposit payload example:
 
@@ -230,4 +241,4 @@ The project currently has account, payment, and ledger flows running with:
 - architecture guardrails (ArchUnit),
 - API integration tests with MockMvc + Testcontainers.
 
-Next improvements can focus on stricter idempotency behavior, security/auth, and richer operational observability.
+Next improvements can focus on security/auth, monetary limits, and richer operational observability.

@@ -1,5 +1,6 @@
 package it.bank.bankcore.payment.domain.mapper.cases;
 
+import it.bank.bankcore.payment.domain.enums.PaymentType;
 import it.bank.bankcore.payment.application.command.DepositCommand;
 import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.payment.domain.model.Payment;
@@ -14,6 +15,7 @@ public class DepositDomainMapper implements DomainMapper <DepositCommand, Paymen
     @Override
     public Payment toDomain(DepositCommand command) {
         return Payment.builder()
+                .type(PaymentType.DEPOSIT)
                 .sourceAccountUuid(null)
                 .targetAccountUuid(command.accountUuid())
                 .amount(command.amount())

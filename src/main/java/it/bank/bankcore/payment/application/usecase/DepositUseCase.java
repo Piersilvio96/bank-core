@@ -8,23 +8,23 @@ import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
 import it.bank.bankcore.payment.application.result.DepositResult;
 import it.bank.bankcore.payment.application.validation.DepositValidationRule;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
-import it.bank.bankcore.payment.domain.model.Payment;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
 import it.bank.bankcore.payment.infrastructure.exception.PaymentCodeAlreadyExists;
 import it.bank.bankcore.shared.application.UseCase;
-import jakarta.transaction.Transactional;
+import it.bank.bankcore.payment.application.service.PaymentExecution;
+import it.bank.bankcore.payment.application.validation.PaymentRequestMatcher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class DepositUseCase implements UseCase<DepositCommand, DepositResult> {
 
     private static final String DEPOSIT_REASON = "Deposit";
 
     private final LedgerRecorder ledgerRecorder;
     private final DepositValidationRule depositValidationRule;
+    private final PaymentExecution paymentExecution;
     private final AccountRepository accountRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentDomainMapper paymentDomainMapper;
@@ -32,9 +32,11 @@ public class DepositUseCase implements UseCase<DepositCommand, DepositResult> {
 
     @Override
     public DepositResult execute(DepositCommand command) {
-        return paymentRepository.findByRequestCode(command.requestCode())
-                .map(payment -> paymentApplicationMapper.toDepositResult(payment, false))
-                .orElseGet(() -> processNewDeposit(command));
+        return paymentExecution.execute(
+                () -> paymentRepository.findByRequestCode(command.requestCode())
+                        .map(payment -> paymentApplicationMapper.toDepositResult(PaymentRequestMatcher.match(payment, command), false))
+                        .orElseGet(() -> processNewDeposit(command)),
+                () -> getIdempotentDeposit(command));
     }
 
     private DepositResult processNewDeposit(DepositCommand command) {
@@ -42,12 +44,7 @@ public class DepositUseCase implements UseCase<DepositCommand, DepositResult> {
 
         var payment = paymentDomainMapper.toDomain(command);
         payment.complete();
-        final Payment savedPayment;
-        try {
-            savedPayment = paymentRepository.save(payment);
-        } catch (PaymentCodeAlreadyExists exception) {
-            return getIdempotentDeposit(command.requestCode());
-        }
+        var savedPayment = paymentRepository.save(payment);
 
         targetAccount.deposit(command.amount());
         accountRepository.save(targetAccount);
@@ -63,9 +60,9 @@ public class DepositUseCase implements UseCase<DepositCommand, DepositResult> {
         return paymentApplicationMapper.toDepositResult(savedPayment, true);
     }
 
-    private DepositResult getIdempotentDeposit(String requestCode) {
-        return paymentRepository.findByRequestCode(requestCode)
-                .map(payment -> paymentApplicationMapper.toDepositResult(payment, false))
-                .orElseThrow(() -> new PaymentCodeAlreadyExists("Payment with request code " + requestCode + " already exists"));
+    private DepositResult getIdempotentDeposit(DepositCommand command) {
+        return paymentRepository.findByRequestCode(command.requestCode())
+                .map(payment -> paymentApplicationMapper.toDepositResult(PaymentRequestMatcher.match(payment, command), false))
+                .orElseThrow(() -> new PaymentCodeAlreadyExists("Payment with request code " + command.requestCode() + " already exists"));
     }
 }

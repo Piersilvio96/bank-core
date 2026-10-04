@@ -1,5 +1,7 @@
 package it.bank.bankcore.payment.application.usecase;
 
+import it.bank.bankcore.payment.domain.exception.PaymentStatusInvalid;
+import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.account.domain.exception.AccountNotFoundException;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.ledger.application.command.RecordReversalLedgerCommand;
@@ -9,20 +11,20 @@ import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
 import it.bank.bankcore.payment.application.result.ReversalResult;
 import it.bank.bankcore.payment.domain.exception.PaymentNotFoundException;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
-import it.bank.bankcore.payment.domain.model.Payment;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
 import it.bank.bankcore.payment.infrastructure.exception.PaymentCodeAlreadyExists;
 import it.bank.bankcore.shared.application.UseCase;
-import jakarta.transaction.Transactional;
+import it.bank.bankcore.payment.application.service.PaymentExecution;
+import it.bank.bankcore.payment.application.validation.PaymentRequestMatcher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class ReversalUseCase implements UseCase<ReversalCommand, ReversalResult> {
 
+    private final PaymentExecution paymentExecution;
     private final AccountRepository accountRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentDomainMapper paymentDomainMapper;
@@ -31,15 +33,28 @@ public class ReversalUseCase implements UseCase<ReversalCommand, ReversalResult>
 
     @Override
     public ReversalResult execute(ReversalCommand input) {
-        return paymentRepository.findByRequestCode(input.requestCode())
-                .map(payment -> paymentApplicationMapper.toReversalResult(payment, false))
-                .orElseGet(() -> processNewReversalCommand(input));
+        return paymentExecution.execute(
+                () -> paymentRepository.findByRequestCode(input.requestCode())
+                        .map(payment -> paymentApplicationMapper.toReversalResult(PaymentRequestMatcher.match(payment, input), false))
+                        .orElseGet(() -> processNewReversalCommand(input)),
+                () -> getIdempotentReversal(input));
     }
 
     private ReversalResult processNewReversalCommand(ReversalCommand input) {
         var paymentToBeReversed = paymentRepository.findByPaymentId(input.paymentId())
                 .orElseThrow(() -> new PaymentNotFoundException(input.paymentId()));
 
+        // A concurrent reversal may have completed while the original-payment lock was awaited.
+        var existingReversal = paymentRepository.findByRequestCode(input.requestCode());
+        if (existingReversal.isPresent()) {
+            return paymentApplicationMapper.toReversalResult(
+                    PaymentRequestMatcher.match(existingReversal.get(), input), false);
+        }
+
+        if (paymentToBeReversed.getStatus() != PaymentStatus.COMPLETED
+                || paymentToBeReversed.getReversedPayment() != null) {
+            throw new PaymentStatusInvalid("Only completed original payments can be reversed");
+        }
         var reversalPayment = paymentDomainMapper.toDomain(input, paymentToBeReversed);
 
         if (!ObjectUtils.isEmpty(reversalPayment.getSourceAccountUuid())){
@@ -57,12 +72,7 @@ public class ReversalUseCase implements UseCase<ReversalCommand, ReversalResult>
         }
 
         reversalPayment.complete();
-        final Payment savedReversalPayment;
-        try {
-            savedReversalPayment = paymentRepository.save(reversalPayment);
-        } catch (PaymentCodeAlreadyExists exception) {
-            return getIdempotentReversal(input.requestCode());
-        }
+        var savedReversalPayment = paymentRepository.save(reversalPayment);
         savedReversalPayment.revert(paymentToBeReversed);
         paymentRepository.updateReversedPayment(paymentToBeReversed);
 
@@ -74,10 +84,10 @@ public class ReversalUseCase implements UseCase<ReversalCommand, ReversalResult>
         return paymentApplicationMapper.toReversalResult(savedReversalPayment, true);
     }
 
-    private ReversalResult getIdempotentReversal(String requestCode) {
-        return paymentRepository.findByRequestCode(requestCode)
-                .map(payment -> paymentApplicationMapper.toReversalResult(payment, false))
-                .orElseThrow(() -> new PaymentCodeAlreadyExists("Payment with request code " + requestCode + " already exists"));
+    private ReversalResult getIdempotentReversal(ReversalCommand command) {
+        return paymentRepository.findByRequestCode(command.requestCode())
+                .map(payment -> paymentApplicationMapper.toReversalResult(PaymentRequestMatcher.match(payment, command), false))
+                .orElseThrow(() -> new PaymentCodeAlreadyExists("Payment with request code " + command.requestCode() + " already exists"));
 
     }
 

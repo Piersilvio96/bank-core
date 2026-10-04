@@ -11,6 +11,7 @@ import it.bank.bankcore.payment.application.mapper.PaymentApplicationMapper;
 import it.bank.bankcore.payment.application.result.WithdrawResult;
 import it.bank.bankcore.payment.application.validation.WithdrawValidationRule;
 import it.bank.bankcore.payment.domain.enums.PaymentStatus;
+import it.bank.bankcore.payment.domain.enums.PaymentType;
 import it.bank.bankcore.payment.domain.mapper.PaymentDomainMapper;
 import it.bank.bankcore.payment.domain.model.Payment;
 import it.bank.bankcore.payment.domain.repository.PaymentRepository;
@@ -27,10 +28,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class WithdrawUseCaseTest {
@@ -52,6 +50,17 @@ class WithdrawUseCaseTest {
 
     @Mock
     private PaymentApplicationMapper paymentApplicationMapper;
+
+    @org.mockito.Spy
+    private it.bank.bankcore.payment.application.service.PaymentExecution paymentExecution =
+            new it.bank.bankcore.payment.application.service.PaymentExecution(transactionManager());
+
+    private static org.springframework.transaction.PlatformTransactionManager transactionManager() {
+        var manager = org.mockito.Mockito.mock(org.springframework.transaction.PlatformTransactionManager.class);
+        org.mockito.Mockito.when(manager.getTransaction(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(invocation -> new org.springframework.transaction.support.SimpleTransactionStatus());
+        return manager;
+    }
 
     @InjectMocks
     private WithdrawUseCase useCase;
@@ -155,6 +164,7 @@ class WithdrawUseCaseTest {
 
     private Payment samplePayment(String uuid, PaymentStatus status, String reason) {
         return Payment.builder()
+                .type(PaymentType.WITHDRAW)
                 .uuid(uuid)
                 .targetAccountUuid("acc-uuid")
                 .amount(new BigDecimal("25.00"))

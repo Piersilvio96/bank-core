@@ -1,5 +1,6 @@
 package it.bank.bankcore.payment.domain.mapper.cases;
 
+import it.bank.bankcore.payment.domain.enums.PaymentType;
 import it.bank.bankcore.payment.application.command.ReversalCommand;
 import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.payment.domain.model.Payment;
@@ -10,11 +11,12 @@ public class ReversalDomainMapper {
 
     public Payment toDomain(ReversalCommand command, Payment toBeReversedPayment) {
         return Payment.builder()
+                .type(PaymentType.REVERSAL)
                 .sourceAccountUuid(toBeReversedPayment.getTargetAccountUuid())
                 .targetAccountUuid(toBeReversedPayment.getSourceAccountUuid())
                 .amount(toBeReversedPayment.getAmount())
                 .currency(toBeReversedPayment.getCurrency())
-                .reason(command.reason())
+                .reason(command.reason() == null || command.reason().isBlank() ? null : command.reason().trim())
                 .requestCode(command.requestCode())
                 .status(PaymentStatus.REVERSED)
                 .build();

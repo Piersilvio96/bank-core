@@ -1,5 +1,6 @@
 package it.bank.bankcore.payment.domain.mapper.cases;
 
+import it.bank.bankcore.payment.domain.enums.PaymentType;
 import it.bank.bankcore.payment.application.command.WithdrawCommand;
 import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.payment.domain.model.Payment;
@@ -14,6 +15,7 @@ public class WithdrawDomainMapper implements DomainMapper <WithdrawCommand, Paym
     @Override
     public Payment toDomain(WithdrawCommand command) {
         return Payment.builder()
+                .type(PaymentType.WITHDRAW)
                 .sourceAccountUuid(null)
                 .targetAccountUuid(command.accountUuid())
                 .amount(command.amount())

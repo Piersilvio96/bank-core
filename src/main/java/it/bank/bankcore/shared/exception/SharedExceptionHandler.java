@@ -16,8 +16,6 @@ import java.util.List;
 
 @RestControllerAdvice
 public class SharedExceptionHandler {
-
-
     @ExceptionHandler(UseCaseException.class)
     public ResponseEntity<ErrorResponse> handleException(UseCaseException exception) {
         ErrorResponse errorResponse = new ErrorResponse();
@@ -46,6 +44,7 @@ public class SharedExceptionHandler {
     public ResponseEntity<ErrorResponse> handleException(BusinessRuleConstraintException exception) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setMessage(exception.getMessage());
+        errorResponse.setCode(exception.getCode());
         errorResponse.setDetails("An error occurred while processing the request.");
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }

@@ -1,5 +1,6 @@
 package it.bank.bankcore.payment.infrastructure.persistence;
 
+import it.bank.bankcore.payment.domain.enums.PaymentType;
 import it.bank.bankcore.account.infrastructure.persistence.AccountJpaEntity;
 import it.bank.bankcore.payment.domain.enums.PaymentStatus;
 import it.bank.bankcore.shared.infrastructure.BaseEntity;
@@ -9,11 +10,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "payments")
+@Table(name = "payments", uniqueConstraints = @UniqueConstraint(name = "payments_request_code_key", columnNames = "request_code"))
 @Getter
 @Setter
 @AllArgsConstructor
@@ -26,6 +26,9 @@ public class PaymentJpaEntity extends BaseEntity {
     private AccountJpaEntity targetAccount;
     @Column(columnDefinition = "DECIMAL(19,2)")
     private BigDecimal amount;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PaymentType type;
     @Column(columnDefinition = "TEXT")
     private String reason;
     @Enumerated(EnumType.STRING)
@@ -33,7 +36,7 @@ public class PaymentJpaEntity extends BaseEntity {
     private PaymentStatus status;
     @Column(columnDefinition = "VARCHAR(3)", nullable = false)
     private String currency;
-    @Column(unique = true, nullable = false)
+    @Column(name = "request_code", nullable = false)
     private String requestCode;
     @OneToOne(fetch = FetchType.EAGER)
     private PaymentJpaEntity reversedPayment;

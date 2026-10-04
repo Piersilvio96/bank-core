@@ -53,6 +53,17 @@ class DepositUseCaseTest {
     @Mock
     private PaymentApplicationMapper paymentApplicationMapper;
 
+    @org.mockito.Spy
+    private it.bank.bankcore.payment.application.service.PaymentExecution paymentExecution =
+            new it.bank.bankcore.payment.application.service.PaymentExecution(transactionManager());
+
+    private static org.springframework.transaction.PlatformTransactionManager transactionManager() {
+        var manager = org.mockito.Mockito.mock(org.springframework.transaction.PlatformTransactionManager.class);
+        org.mockito.Mockito.when(manager.getTransaction(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(invocation -> new org.springframework.transaction.support.SimpleTransactionStatus());
+        return manager;
+    }
+
     @InjectMocks
     private DepositUseCase useCase;
 
@@ -156,6 +167,7 @@ class DepositUseCaseTest {
 
     private Payment samplePayment(String uuid, PaymentStatus status) {
         return Payment.builder()
+                .type(it.bank.bankcore.payment.domain.enums.PaymentType.DEPOSIT)
                 .uuid(uuid)
                 .targetAccountUuid("acc-uuid")
                 .amount(new BigDecimal("25.00"))
