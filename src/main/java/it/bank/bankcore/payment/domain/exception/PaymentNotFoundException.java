@@ -1,17 +1,10 @@
 package it.bank.bankcore.payment.domain.exception;
 
-import jakarta.persistence.EntityNotFoundException;
+import it.bank.bankcore.shared.exception.ErrorCode;
+import it.bank.bankcore.shared.exception.NotFoundException;
 
-public class PaymentNotFoundException extends EntityNotFoundException {
-
-    private final String paymentId;
-
+public class PaymentNotFoundException extends NotFoundException {
     public PaymentNotFoundException(String paymentId) {
-        this.paymentId = paymentId;
-    }
-
-    @Override
-    public String getMessage() {
-        return "Payment with ID " + paymentId + " not found.";
+        super(ErrorCode.PAYMENT_NOT_FOUND, "Payment with ID " + paymentId + " not found.");
     }
 }

@@ -111,7 +111,7 @@ class ApiMockMvcPostgresIntegrationTest {
     }
 
     @Test
-    void shouldReturnInternalServerErrorWhenCreatingAccountForMissingUser() throws Exception {
+    void shouldReturnNotFoundWhenCreatingAccountForMissingUser() throws Exception {
         mockMvc.perform(post("/api/v1/accounts")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -120,7 +120,9 @@ class ApiMockMvcPostgresIntegrationTest {
                                   "currency": "EUR"
                                 }
                                 """.formatted(UUID.randomUUID())))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("USER_NOT_FOUND"))
+                .andExpect(jsonPath("$.traceId").isNotEmpty())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("User not found")));
     }
 
@@ -141,7 +143,32 @@ class ApiMockMvcPostgresIntegrationTest {
                                 }
                                 """))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.errors").isNotEmpty())
                 .andExpect(jsonPath("$.message").value("Validation failed"));
+    }
+
+    @Test
+    void shouldReturnInvalidRequestWhenListingAccountsWithoutUser() throws Exception {
+        mockMvc.perform(get("/api/v1/accounts"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void shouldReturnInvalidRequestWhenBodyIsMalformed() throws Exception {
+        mockMvc.perform(post("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ not json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUserDoesNotExist() throws Exception {
+        mockMvc.perform(get("/api/v1/users/{uuid}", UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("USER_NOT_FOUND"));
     }
 
     @Test
@@ -400,6 +427,7 @@ class ApiMockMvcPostgresIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("USER_ALREADY_EXISTS"))
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("User already exists")));
     }
 
@@ -443,7 +471,7 @@ class ApiMockMvcPostgresIntegrationTest {
     }
 
     @Test
-    void shouldReturnInternalServerErrorWhenAccountDoesNotExist() throws Exception {
+    void shouldReturnNotFoundWhenAccountDoesNotExist() throws Exception {
         var missingUuid = UUID.randomUUID().toString();
 
         mockMvc.perform(post("/api/v1/payments/deposit")
@@ -456,16 +484,18 @@ class ApiMockMvcPostgresIntegrationTest {
                                   "requestCode": "%s"
                                 }
                                 """.formatted(missingUuid, UUID.randomUUID())))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ACCOUNT_NOT_FOUND"))
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Account not found")));
     }
 
     @Test
-    void shouldReturnInternalServerErrorWhenGetAccountUsesMissingUuid() throws Exception {
+    void shouldReturnNotFoundWhenGetAccountUsesMissingUuid() throws Exception {
         var missingUuid = UUID.randomUUID().toString();
 
         mockMvc.perform(get("/api/v1/accounts/{uuid}", missingUuid))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("ACCOUNT_NOT_FOUND"))
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Account not found")));
     }
 
@@ -484,6 +514,7 @@ class ApiMockMvcPostgresIntegrationTest {
                                 }
                                 """.formatted(uuid, UUID.randomUUID())))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INSUFFICIENT_FUNDS"))
                 .andExpect(jsonPath("$.message").value("Insufficient funds"));
     }
 
@@ -504,6 +535,7 @@ class ApiMockMvcPostgresIntegrationTest {
                                 }
                                 """.formatted(uuid, uuid, UUID.randomUUID())))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("SAME_ACCOUNT_TRANSFER"))
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Source and target accounts must be different")));
     }
 
@@ -522,6 +554,7 @@ class ApiMockMvcPostgresIntegrationTest {
                                 }
                                 """.formatted(uuid, UUID.randomUUID())))
                 .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("CURRENCY_MISMATCH"))
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Currency mismatch")));
     }
 

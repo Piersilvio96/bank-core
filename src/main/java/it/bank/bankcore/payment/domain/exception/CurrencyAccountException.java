@@ -1,5 +1,6 @@
 package it.bank.bankcore.payment.domain.exception;
 
+import it.bank.bankcore.shared.exception.ErrorCode;
 import it.bank.bankcore.shared.exception.BusinessRuleConstraintException;
 import lombok.Getter;
 
@@ -13,7 +14,7 @@ public class CurrencyAccountException extends BusinessRuleConstraintException {
      * @param paymentCurrency is the currency of the failed payment
      */
     public CurrencyAccountException(String accountCurrency, String paymentCurrency) {
-        super("Currency mismatch: account=" + accountCurrency + " vs payment=" + paymentCurrency);
+        super(ErrorCode.CURRENCY_MISMATCH, "Currency mismatch: account=" + accountCurrency + " vs payment=" + paymentCurrency);
     }
 
 }

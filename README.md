@@ -1,4 +1,4 @@
-# BankCore
+﻿# BankCore
 
 [![Test on main](https://github.com/Piersilvio96/bank-core/actions/workflows/test-on-main.yml/badge.svg)](https://github.com/Piersilvio96/bank-core/actions/workflows/test-on-main.yml)
 
@@ -16,7 +16,7 @@ BankCore is the backend core of a modular banking platform built with a clean ar
 - Ledger entries for each payment operation.
 - Full payment reversals with original-payment locking.
 - Idempotency by request code, with conflicts for different payment data.
-- Global API error handling (`400`, `409`, `500` depending on exception type).
+- Global API error handling (`400`, `404`, `409`, `500`) with a stable machine-readable `code` and a `traceId` in every error response.
 
 ## Tech Stack
 

@@ -10,14 +10,12 @@ import it.bank.bankcore.user.domain.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.orm.jpa.JpaObjectRetrievalFailureException;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -66,13 +64,7 @@ class AccountRepositoryImplTest {
 
     @Test
     void save_shouldFailWhenUserDoesNotExist() {
-        // Spring translates the EntityNotFoundException raised inside the @Repository.
-        var exception = assertThrows(
-                JpaObjectRetrievalFailureException.class,
-                () -> accountRepository.save(sampleAccount("missing-user"))
-        );
-
-        assertInstanceOf(UserNotFoundException.class, exception.getCause());
+        assertThrows(UserNotFoundException.class, () -> accountRepository.save(sampleAccount("missing-user")));
     }
 
     private User saveUser() {
