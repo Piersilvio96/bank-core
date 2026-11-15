@@ -56,6 +56,32 @@ class FlywayPostgresMigrationTest {
                 org.junit.jupiter.api.Assertions.assertEquals(expected, rows.getString("type"));
             }
         }
+
+        // V4: personal data moves from accounts to users, every legacy account keeps its owner.
+        try (var connection = java.sql.DriverManager.getConnection(
+                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+             var statement = connection.createStatement()) {
+            try (var rows = statement.executeQuery("""
+                    SELECT a.id, u.uuid, u.email, u.fiscal_code, u.status
+                    FROM accounts a JOIN users u ON u.id = a.user_id
+                    ORDER BY a.id
+                    """)) {
+                for (String expectedEmail : new String[]{"a@example.com", "c@example.com"}) {
+                    assertTrue(rows.next());
+                    org.junit.jupiter.api.Assertions.assertEquals(expectedEmail, rows.getString("email"));
+                    org.junit.jupiter.api.Assertions.assertEquals("ACTIVE", rows.getString("status"));
+                    org.junit.jupiter.api.Assertions.assertNotNull(rows.getString("uuid"));
+                }
+                org.junit.jupiter.api.Assertions.assertFalse(rows.next());
+            }
+            try (var rows = statement.executeQuery("""
+                    SELECT count(*) FROM information_schema.columns
+                    WHERE table_name = 'accounts' AND column_name IN ('first_name', 'email', 'fiscal_code')
+                    """)) {
+                assertTrue(rows.next());
+                org.junit.jupiter.api.Assertions.assertEquals(0, rows.getInt(1));
+            }
+        }
     }
 }
 

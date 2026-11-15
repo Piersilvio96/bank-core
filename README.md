@@ -6,8 +6,9 @@ BankCore is the backend core of a modular banking platform built with a clean ar
 
 ## What Is Implemented
 
-- Account creation with duplicate prevention (`fiscalCode` or `email`).
-- Account read APIs (`GET account` and `GET balance`).
+- Users (the physical person: name, email, fiscal code, address) with duplicate prevention (`fiscalCode` or `email`).
+- Accounts owned by a user (one user, many accounts); an account only holds balance, currency and status.
+- Account read APIs (`GET account`, `GET balance`, list accounts of a user).
 - Payment flows:
   - deposit,
   - withdraw,
@@ -38,7 +39,7 @@ BankCore is the backend core of a modular banking platform built with a clean ar
 ```text
 src/main/java/it/bank/bankcore
 |-- BankCoreApplication.java
-|-- account|payment|ledger
+|-- user|account|payment|ledger
 |   |-- api
 |   |   |-- controller
 |   |   |-- request
@@ -106,6 +107,8 @@ spring.flyway.locations: classpath:db/migration
   - `ledger_entries`.
 - `V2__add_reversal_columns.sql` links original and reversal payments.
 - `V3__add_payment_type.sql` stores payment types and backfills existing payments.
+- `V4__split_users_from_accounts.sql` creates `users`, moves the personal data out of `accounts`
+  (one user per existing account holder) and links each account to its owner with `accounts.user_id`.
 
 ## Requirements
 
@@ -135,13 +138,14 @@ http://localhost:8080
 
 ## API Overview
 
-### Account APIs
+### User APIs
 
-- `POST /api/v1/accounts`
-- `GET /api/v1/accounts/{uuid}`
-- `GET /api/v1/accounts/{uuid}/balance`
+A user is the physical person. Create the user first, then open accounts for it.
 
-Create account payload example:
+- `POST /api/v1/users`
+- `GET /api/v1/users/{uuid}`
+
+Create user payload example:
 
 ```json
 {
@@ -152,7 +156,22 @@ Create account payload example:
   "fiscalCode": "RSSMRA80A01H501U",
   "city": "Rome",
   "state": "RM",
-  "country": "Italy",
+  "country": "Italy"
+}
+```
+
+### Account APIs
+
+- `POST /api/v1/accounts`
+- `GET /api/v1/accounts?userUuid={userUuid}` lists the accounts of a user
+- `GET /api/v1/accounts/{uuid}`
+- `GET /api/v1/accounts/{uuid}/balance`
+
+Create account payload example (`currency` is optional and defaults to `EUR`):
+
+```json
+{
+  "userUuid": "0b6f3a52-7a40-4d5b-8c12-b04e9a1c2d3e",
   "currency": "EUR"
 }
 ```

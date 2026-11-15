@@ -130,11 +130,15 @@ class PaymentIdempotencyIntegrationTest {
 
     private String account() throws Exception {
         var unique = UUID.randomUUID().toString();
-        var response = mvc.perform(post("/api/v1/accounts").contentType(MediaType.APPLICATION_JSON).content("""
+        var userResponse = mvc.perform(post("/api/v1/users").contentType(MediaType.APPLICATION_JSON).content("""
                 {"firstName":"Test","lastName":"Customer","email":"%s@example.com",
                  "phoneNumber":"+393331234567","fiscalCode":"%s","city":"Rome",
-                 "state":"RM","country":"Italy","currency":"EUR"}
+                 "state":"RM","country":"Italy"}
                 """.formatted(unique, unique))).andExpect(status().isCreated()).andReturn();
+        String userUuid = JsonPath.read(userResponse.getResponse().getContentAsString(), "$.uuid");
+        var response = mvc.perform(post("/api/v1/accounts").contentType(MediaType.APPLICATION_JSON).content("""
+                {"userUuid":"%s","currency":"EUR"}
+                """.formatted(userUuid))).andExpect(status().isCreated()).andReturn();
         return JsonPath.read(response.getResponse().getContentAsString(), "$.uuid");
     }
     private String deposit(String account, String amount, String code) {

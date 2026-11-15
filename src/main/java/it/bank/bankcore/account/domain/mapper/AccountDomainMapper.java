@@ -16,14 +16,7 @@ public class AccountDomainMapper implements DomainMapper<CreateAccountCommand, A
 		var currency = (command.currency() == null || command.currency().isBlank()) ? "EUR" : command.currency().toUpperCase();
 
 		return Account.builder()
-				.firstName(command.firstName())
-				.lastName(command.lastName())
-				.email(command.email())
-				.phoneNumber(command.phoneNumber())
-				.fiscalCode(command.fiscalCode())
-				.city(command.city())
-				.state(command.state())
-				.country(command.country())
+				.userUuid(command.userUuid())
 				.balance(BigDecimal.ZERO)
 				.currency(currency)
 				.status(AccountStatus.ACTIVE)

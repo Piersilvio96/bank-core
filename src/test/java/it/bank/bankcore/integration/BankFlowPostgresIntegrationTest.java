@@ -3,6 +3,8 @@ package it.bank.bankcore.integration;
 import it.bank.bankcore.account.api.controller.AccountController;
 import it.bank.bankcore.account.api.request.CreateAccountRequest;
 import it.bank.bankcore.payment.api.controller.PaymentController;
+import it.bank.bankcore.user.api.controller.UserController;
+import it.bank.bankcore.user.api.request.CreateUserRequest;
 import it.bank.bankcore.payment.api.request.DepositRequest;
 import it.bank.bankcore.payment.api.request.TransferRequest;
 import it.bank.bankcore.payment.api.request.WithdrawRequest;
@@ -44,6 +46,9 @@ class BankFlowPostgresIntegrationTest {
         registry.add("spring.datasource.password", POSTGRES::getPassword);
         registry.add("spring.datasource.driver-class-name", POSTGRES::getDriverClassName);
     }
+
+    @Autowired
+    private UserController userController;
 
     @Autowired
     private AccountController accountController;
@@ -141,7 +146,7 @@ class BankFlowPostgresIntegrationTest {
     private it.bank.bankcore.account.api.response.CreateAccountResponse createAccount(String userPrefix) {
         var suffix = requestCode().substring(0, 8);
 
-        return accountController.createAccount(new CreateAccountRequest(
+        var user = userController.createUser(new CreateUserRequest(
                 "Mario",
                 "Rossi",
                 userPrefix + "." + suffix + "@example.com",
@@ -149,8 +154,9 @@ class BankFlowPostgresIntegrationTest {
                 "RSS" + suffix.toUpperCase(),
                 "Rome",
                 "RM",
-                "Italy",
-                "EUR"
+                "Italy"
         )).getBody();
+
+        return accountController.createAccount(new CreateAccountRequest(user.uuid(), "EUR")).getBody();
     }
 }

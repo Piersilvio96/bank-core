@@ -71,10 +71,77 @@ class ApiMockMvcPostgresIntegrationTest {
         mockMvc.perform(get("/api/v1/accounts/{uuid}", uuid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.uuid").value(uuid))
+                .andExpect(jsonPath("$.userUuid").isNotEmpty())
+                .andExpect(jsonPath("$.currency").value("EUR"))
+                .andExpect(jsonPath("$.balance").value(0))
+                .andExpect(jsonPath("$.firstName").doesNotExist())
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
+
+    @Test
+    void shouldCreateUserAndReadUserDetailsViaHttpApi() throws Exception {
+        var userUuid = createUser("mockmvc-user-details");
+
+        mockMvc.perform(get("/api/v1/users/{uuid}", userUuid))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.uuid").value(userUuid))
                 .andExpect(jsonPath("$.firstName").value("Mario"))
                 .andExpect(jsonPath("$.lastName").value("Rossi"))
-                .andExpect(jsonPath("$.email").value(org.hamcrest.Matchers.containsString("mockmvc-account-details")))
-                .andExpect(jsonPath("$.status").value("ACTIVE"));
+                .andExpect(jsonPath("$.email").value(org.hamcrest.Matchers.containsString("mockmvc-user-details")))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.createdAt").isNumber());
+    }
+
+    @Test
+    void shouldOpenMultipleAccountsForSameUserAndListThem() throws Exception {
+        var userUuid = createUser("mockmvc-multi-account");
+        var otherUserUuid = createUser("mockmvc-multi-account-other");
+
+        var firstAccount = createAccountForUser(userUuid);
+        var secondAccount = createAccountForUser(userUuid);
+        createAccountForUser(otherUserUuid);
+
+        mockMvc.perform(get("/api/v1/accounts").param("userUuid", userUuid))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].uuid").value(firstAccount))
+                .andExpect(jsonPath("$[1].uuid").value(secondAccount))
+                .andExpect(jsonPath("$[0].userUuid").value(userUuid))
+                .andExpect(jsonPath("$[0].currency").value("EUR"));
+    }
+
+    @Test
+    void shouldReturnInternalServerErrorWhenCreatingAccountForMissingUser() throws Exception {
+        mockMvc.perform(post("/api/v1/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userUuid": "%s",
+                                  "currency": "EUR"
+                                }
+                                """.formatted(UUID.randomUUID())))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("User not found")));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenCreateUserPayloadIsInvalid() throws Exception {
+        mockMvc.perform(post("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "firstName": "",
+                                  "lastName": "Rossi",
+                                  "email": "invalid-email",
+                                  "phoneNumber": "123",
+                                  "fiscalCode": "",
+                                  "city": "Rome",
+                                  "state": "RM",
+                                  "country": "Italy"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Validation failed"));
     }
 
     @Test
@@ -189,14 +256,7 @@ class ApiMockMvcPostgresIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "firstName": "",
-                                  "lastName": "Rossi",
-                                  "email": "invalid-email",
-                                  "phoneNumber": "123",
-                                  "fiscalCode": "",
-                                  "city": "Rome",
-                                  "state": "RM",
-                                  "country": "Italy",
+                                  "userUuid": "",
                                   "currency": "EU"
                                 }
                                 """))
@@ -317,31 +377,30 @@ class ApiMockMvcPostgresIntegrationTest {
     }
 
     @Test
-    void shouldReturnConflictWhenAccountAlreadyExists() throws Exception {
+    void shouldReturnConflictWhenUserAlreadyExists() throws Exception {
         String payload = """
                 {
                   "firstName": "Mario",
                   "lastName": "Rossi",
-                  "email": "duplicate.account@example.com",
+                  "email": "duplicate.user@example.com",
                   "phoneNumber": "+393331234567",
                   "fiscalCode": "DUPLICATE123",
                   "city": "Rome",
                   "state": "RM",
-                  "country": "Italy",
-                  "currency": "EUR"
+                  "country": "Italy"
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/accounts")
+        mockMvc.perform(post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/api/v1/accounts")
+        mockMvc.perform(post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Account already exists")));
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("User already exists")));
     }
 
     @Test
@@ -523,9 +582,13 @@ class ApiMockMvcPostgresIntegrationTest {
     }
 
     private String createAccount(String userPrefix) throws Exception {
+        return createAccountForUser(createUser(userPrefix));
+    }
+
+    private String createUser(String userPrefix) throws Exception {
         var suffix = UUID.randomUUID().toString().substring(0, 8);
 
-        var response = mockMvc.perform(post("/api/v1/accounts")
+        var response = mockMvc.perform(post("/api/v1/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -536,11 +599,29 @@ class ApiMockMvcPostgresIntegrationTest {
                                   "fiscalCode": "RSS%s",
                                   "city": "Rome",
                                   "state": "RM",
-                                  "country": "Italy",
-                                  "currency": "EUR"
+                                  "country": "Italy"
                                 }
                                 """.formatted(userPrefix, suffix, suffix.toUpperCase())))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.uuid").isNotEmpty())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        return JsonPath.read(response, "$.uuid");
+    }
+
+    private String createAccountForUser(String userUuid) throws Exception {
+        var response = mockMvc.perform(post("/api/v1/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "userUuid": "%s",
+                                  "currency": "EUR"
+                                }
+                                """.formatted(userUuid)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.userUuid").value(userUuid))
                 .andExpect(jsonPath("$.uuid").isNotEmpty())
                 .andReturn()
                 .getResponse()

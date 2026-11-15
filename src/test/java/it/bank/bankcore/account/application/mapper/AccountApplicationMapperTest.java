@@ -26,12 +26,8 @@ class AccountApplicationMapperTest {
 
     @Test
     void toDomain_shouldDelegateToDomainMapper() {
-        var command = new CreateAccountCommand(
-                "Mario", "Rossi", "mario.rossi@example.com", "+393331234567", "RSSMRA80A01H501U",
-                "Rome", "RM", "Italy", "EUR"
-        );
+        var command = new CreateAccountCommand("user-uuid", "EUR");
         var expectedDomain = sampleAccount();
-
         when(accountDomainMapper.toDomain(command)).thenReturn(expectedDomain);
 
         var result = mapper.toDomain(command);
@@ -46,8 +42,9 @@ class AccountApplicationMapperTest {
         var result = mapper.toResult(account);
 
         assertEquals(account.getUuid(), result.uuid());
-        assertEquals(account.getFiscalCode(), result.fiscalCode());
+        assertEquals(account.getUserUuid(), result.userUuid());
         assertEquals(account.getCurrency(), result.currency());
+        assertEquals(account.getStatus(), result.status());
     }
 
     @Test
@@ -57,7 +54,9 @@ class AccountApplicationMapperTest {
         var result = mapper.toGetAccountResult(account);
 
         assertEquals(account.getUuid(), result.uuid());
-        assertEquals(account.getEmail(), result.email());
+        assertEquals(account.getUserUuid(), result.userUuid());
+        assertEquals(0, account.getBalance().compareTo(result.balance()));
+        assertEquals(account.getCurrency(), result.currency());
         assertEquals(account.getStatus(), result.status());
     }
 
@@ -74,18 +73,10 @@ class AccountApplicationMapperTest {
     private Account sampleAccount() {
         return Account.builder()
                 .uuid("acc-uuid")
-                .firstName("Mario")
-                .lastName("Rossi")
-                .email("mario.rossi@example.com")
-                .fiscalCode("RSSMRA80A01H501U")
-                .phoneNumber("+393331234567")
-                .city("Rome")
-                .state("RM")
-                .country("Italy")
+                .userUuid("user-uuid")
                 .balance(new BigDecimal("120.00"))
                 .currency("EUR")
                 .status(AccountStatus.ACTIVE)
                 .build();
     }
 }
-

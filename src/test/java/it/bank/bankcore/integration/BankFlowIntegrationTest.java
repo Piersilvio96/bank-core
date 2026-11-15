@@ -5,6 +5,8 @@ import it.bank.bankcore.account.api.request.CreateAccountRequest;
 import it.bank.bankcore.account.domain.exception.InsufficientFundsException;
 import it.bank.bankcore.account.domain.exception.InvalidAmountException;
 import it.bank.bankcore.payment.api.controller.PaymentController;
+import it.bank.bankcore.user.api.controller.UserController;
+import it.bank.bankcore.user.api.request.CreateUserRequest;
 import it.bank.bankcore.payment.api.request.DepositRequest;
 import it.bank.bankcore.payment.api.request.TransferRequest;
 import it.bank.bankcore.payment.api.request.WithdrawRequest;
@@ -23,6 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SpringBootTest
 @ActiveProfiles("test")
 class BankFlowIntegrationTest {
+
+    @Autowired
+    private UserController userController;
 
     @Autowired
     private AccountController accountController;
@@ -174,7 +179,7 @@ class BankFlowIntegrationTest {
     private it.bank.bankcore.account.api.response.CreateAccountResponse createAccount(String userPrefix) {
         var suffix = requestCode().substring(0, 8);
 
-        return accountController.createAccount(new CreateAccountRequest(
+        var user = userController.createUser(new CreateUserRequest(
                 "Mario",
                 "Rossi",
                 userPrefix + "." + suffix + "@example.com",
@@ -182,9 +187,10 @@ class BankFlowIntegrationTest {
                 "RSS" + suffix.toUpperCase(),
                 "Rome",
                 "RM",
-                "Italy",
-                "EUR"
+                "Italy"
         )).getBody();
+
+        return accountController.createAccount(new CreateAccountRequest(user.uuid(), "EUR")).getBody();
     }
 }
 

@@ -36,10 +36,7 @@ class GetAccountUseCaseTest {
     void execute_shouldReturnAccountResultWhenFound() {
         var query = new GetAccountQuery("acc-uuid");
         var account = sampleAccount();
-        var expected = new GetAccountResult(
-                "acc-uuid", "Mario", "Rossi", "mario.rossi@example.com", "RSSMRA80A01H501U", "+393331234567",
-                "Rome", "RM", "Italy", AccountStatus.ACTIVE
-        );
+        var expected = new GetAccountResult("acc-uuid", "user-uuid", BigDecimal.ZERO, "EUR", AccountStatus.ACTIVE);
 
         when(accountRepository.findByUuid("acc-uuid")).thenReturn(Optional.of(account));
         when(accountApplicationMapper.toGetAccountResult(account)).thenReturn(expected);
@@ -60,18 +57,10 @@ class GetAccountUseCaseTest {
     private Account sampleAccount() {
         return Account.builder()
                 .uuid("acc-uuid")
-                .firstName("Mario")
-                .lastName("Rossi")
-                .email("mario.rossi@example.com")
-                .fiscalCode("RSSMRA80A01H501U")
-                .phoneNumber("+393331234567")
-                .city("Rome")
-                .state("RM")
-                .country("Italy")
+                .userUuid("user-uuid")
                 .balance(BigDecimal.ZERO)
                 .currency("EUR")
                 .status(AccountStatus.ACTIVE)
                 .build();
     }
 }
-

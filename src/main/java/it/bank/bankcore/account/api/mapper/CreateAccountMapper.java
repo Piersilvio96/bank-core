@@ -13,18 +13,10 @@ public class CreateAccountMapper implements
         ApiInMapper<CreateAccountRequest, CreateAccountCommand>,
         ApiOutMapper<CreateAccountResponse, CreateAccountResult>
 {
-
     @Override
     public CreateAccountCommand toCommand(CreateAccountRequest request) {
         return new CreateAccountCommand(
-                request.firstName(),
-                request.lastName(),
-                request.email(),
-                request.phoneNumber(),
-                request.fiscalCode(),
-                request.city(),
-                request.state(),
-                request.country(),
+                request.userUuid(),
                 request.currency()
         );
     }
@@ -33,16 +25,10 @@ public class CreateAccountMapper implements
     public CreateAccountResponse toResponse(CreateAccountResult result) {
         return new CreateAccountResponse(
                 result.uuid(),
-                result.firstName(),
-                result.lastName(),
-                result.email(),
-                result.phoneNumber(),
-                result.fiscalCode(),
-                result.city(),
-                result.state(),
-                result.country(),
+                result.userUuid(),
                 result.balance(),
-                result.currency()
+                result.currency(),
+                result.status()
         );
     }
 }

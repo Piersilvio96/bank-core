@@ -25,30 +25,19 @@ public class AccountApplicationMapper implements ApplicationMapper<CreateAccount
 	public CreateAccountResult toResult(Account domain) {
 		return new CreateAccountResult(
 				domain.getUuid(),
-				domain.getFirstName(),
-				domain.getLastName(),
-				domain.getEmail(),
-				domain.getFiscalCode(),
-				domain.getPhoneNumber(),
-				domain.getCity(),
-				domain.getState(),
-				domain.getCountry(),
+				domain.getUserUuid(),
 				domain.getBalance(),
-				domain.getCurrency()
+				domain.getCurrency(),
+				domain.getStatus()
 		);
 	}
 
 	public GetAccountResult toGetAccountResult(Account domain) {
 		return new GetAccountResult(
 				domain.getUuid(),
-				domain.getFirstName(),
-				domain.getLastName(),
-				domain.getEmail(),
-				domain.getFiscalCode(),
-				domain.getPhoneNumber(),
-				domain.getCity(),
-				domain.getState(),
-				domain.getCountry(),
+				domain.getUserUuid(),
+				domain.getBalance(),
+				domain.getCurrency(),
 				domain.getStatus()
 		);
 	}

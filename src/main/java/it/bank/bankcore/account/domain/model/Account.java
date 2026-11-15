@@ -19,15 +19,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @SuperBuilder
 public class Account extends Base {
+    private final String userUuid;
 
-    private String firstName;
-    private String lastName;
-    private String email;
-    private String fiscalCode;
-    private String phoneNumber;
-    private String city;
-    private String state;
-    private String country;
     private BigDecimal balance;
     private final String currency;
     private AccountStatus status;

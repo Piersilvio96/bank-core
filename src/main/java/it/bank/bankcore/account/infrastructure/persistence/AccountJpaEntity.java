@@ -2,6 +2,7 @@ package it.bank.bankcore.account.infrastructure.persistence;
 
 import it.bank.bankcore.account.domain.enums.AccountStatus;
 import it.bank.bankcore.shared.infrastructure.BaseEntity;
+import it.bank.bankcore.user.infrastructure.persistence.UserJpaEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -20,22 +21,11 @@ import java.util.Objects;
 @AllArgsConstructor
 @SuperBuilder
 public class AccountJpaEntity extends BaseEntity {
-    @Column(nullable = false)
-    private String firstName;
-    @Column(nullable = false)
-    private String lastName;
-    @Column(nullable = false)
-    private String email;
-    @Column(nullable = false)
-    private String fiscalCode;
-    @Column(nullable = false)
-    private String phoneNumber;
-    @Column(nullable = false)
-    private String city;
-    @Column(nullable = false)
-    private String state;
-    @Column(nullable = false)
-    private String country;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    @ToString.Exclude
+    private UserJpaEntity user;
+
     @Column(columnDefinition = "DECIMAL(19,2)")
     private BigDecimal balance;
     @Column(columnDefinition = "VARCHAR(3)", nullable = false)

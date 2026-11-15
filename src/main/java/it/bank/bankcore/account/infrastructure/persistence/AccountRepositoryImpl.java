@@ -1,19 +1,23 @@
 package it.bank.bankcore.account.infrastructure.persistence;
 
-import it.bank.bankcore.account.domain.criteria.CreateAccountCriteria;
 import it.bank.bankcore.account.domain.model.Account;
 import it.bank.bankcore.account.domain.repository.AccountRepository;
 import it.bank.bankcore.account.infrastructure.persistence.mapper.AccountJpaMapper;
-import it.bank.bankcore.account.infrastructure.persistence.specification.CreateAccountCriteriaSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
+/**
+ * Transactional so that the lazy account -> user relation can be read while mapping to the domain model,
+ * even when the repository is called outside a use case transaction.
+ */
 @Repository
 @RequiredArgsConstructor
+@Transactional
 public class AccountRepositoryImpl implements AccountRepository {
-
     private final AccountJpaRepository accountJpaRepository;
     private final AccountJpaMapper accountJpaMapper;
 
@@ -37,13 +41,9 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
-    public Boolean existsByFiscalCodeOrEmail(String fiscalCode, String email) {
-        return accountJpaRepository.existsByFiscalCodeOrEmail(fiscalCode, email);
-    }
-
-    @Override
-    public Boolean exists(CreateAccountCriteria criteria) {
-        var createAccountSpecification = CreateAccountCriteriaSpecification.createSpecification(criteria);
-        return accountJpaRepository.exists(createAccountSpecification);
+    public List<Account> findAllByUserUuid(String userUuid) {
+        return accountJpaRepository.findAllByUserUuid(userUuid).stream()
+                .map(accountJpaMapper::toDomain)
+                .toList();
     }
 }

@@ -70,6 +70,27 @@ dependencies {
 }
 
 
+def openApiOutputDir = layout.buildDirectory.dir('openapi')
+
+tasks.named('test', Test) {
+    exclude '**/OpenApiSpecGenerator*'
+}
+
+tasks.register('generateOpenApi', Test) {
+    group = 'documentation'
+    description = 'Generates the OpenAPI spec (openapi.json / openapi.yaml) into build/openapi'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    filter { includeTestsMatching 'it.bank.bankcore.openapi.OpenApiSpecGenerator' }
+    systemProperty 'openapi.outputDir', openApiOutputDir.get().asFile.absolutePath
+    outputs.dir openApiOutputDir
+    mustRunAfter 'test'
+}
+
+tasks.named('build') {
+    dependsOn 'generateOpenApi'
+}
+
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
